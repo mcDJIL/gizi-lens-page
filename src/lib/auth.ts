@@ -1,6 +1,7 @@
 import { signInWithEmailAndPassword, signOut, type User } from 'firebase/auth'
 import { auth } from './firebase'
 import { fetchUser, fetchUsers, type ApiUser } from './api'
+import { fetchAdminProfile } from './api'
 
 export type UserRole =
   | 'admin'
@@ -96,6 +97,7 @@ export async function fetchUserProfile(user: User): Promise<UserProfile | null> 
     status: 'Verified',
     createdAtLabel: 'Hari ini',
   }
+  return { ...profile, role: profile.role as UserRole }
 }
 
 export async function loginWithEmail(email: string, password: string): Promise<UserProfile> {

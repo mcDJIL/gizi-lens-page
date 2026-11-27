@@ -68,23 +68,37 @@ async function request<T>(path: string, init?: RequestInit): Promise<T | null> {
   const controller = new AbortController()
   const timer = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
   try {
+    const user = auth.currentUser
+    if (!user) throw new Error('Firebase session is missing')
+    const token = await user.getIdToken()
     const response = await fetch(withBase(path), {
       ...init,
       signal: controller.signal,
+      cache: 'no-store',
       headers: {
         Accept: 'application/json',
         ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-        ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
+        Authorization: `Bearer ${token}`,
         ...(init?.headers ?? {}),
       },
     })
-    if (!response.ok) return null
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    if (!response.headers.get('content-type')?.includes('application/json')) {
+      throw new Error('Expected JSON response')
+    }
     return (await response.json()) as T
-  } catch {
+  } catch (error) {
+    console.error('[GiziLens API]', path.split('?')[0], error)
     return null
   } finally {
     window.clearTimeout(timer)
   }
+}
+
+export type ApiAdminProfile = Pick<ApiUser, 'uid' | 'name' | 'email' | 'role' | 'institution' | 'status' | 'createdAtLabel' | 'createdAtMs'>
+
+export async function fetchAdminProfile() {
+  return request<ApiAdminProfile>('/admin/me')
 }
 
 export async function fetchKpi(timeframe: TimeframeKey) {

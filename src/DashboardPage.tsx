@@ -24,7 +24,6 @@ import {
 import { DashboardSubView, type SidebarMenuId } from './dashboard/DashboardSubViews'
 import type { UserProfile, UserStatus } from './lib/auth'
 import {
-  FALLBACK_REGISTRATIONS,
   FALLBACK_TRANSACTIONS,
   KPI_BY_TIMEFRAME,
   REGIONAL_OVERVIEW,
