@@ -13,9 +13,18 @@ const LINKS = [
 type NavProps = {
   demoOpen: boolean
   onOpenDemo: () => void
+  isAuthenticated: boolean
+  userName?: string
+  onNavigate: (path: '/' | '/login' | '/dashboard') => void
 }
 
-export default function Nav({ demoOpen, onOpenDemo }: NavProps) {
+export default function Nav({
+  demoOpen,
+  onOpenDemo,
+  isAuthenticated,
+  userName,
+  onNavigate,
+}: NavProps) {
   const scrolled = useScrolled(20)
   const [open, setOpen] = useState(false)
 
@@ -60,7 +69,20 @@ export default function Nav({ demoOpen, onOpenDemo }: NavProps) {
           </nav>
 
           <div className="flex items-center gap-2">
-            <div className="hidden sm:block">
+            <div className="hidden items-center gap-2 sm:flex">
+              {isAuthenticated ? (
+                <Button
+                  size="sm"
+                  variant="gold"
+                  onClick={() => onNavigate('/dashboard')}
+                >
+                  Dashboard{userName ? ` · ${userName.split(' ')[0]}` : ''}
+                </Button>
+              ) : (
+                <Button size="sm" variant="ghost" onClick={() => onNavigate('/login')}>
+                  Login
+                </Button>
+              )}
               <Button
                 size="sm"
                 arrow
@@ -108,10 +130,33 @@ export default function Nav({ demoOpen, onOpenDemo }: NavProps) {
           ))}
         </nav>
 
-        <div className="flex flex-col gap-4 border-t border-line pt-6">
+        <div className="flex flex-col gap-3 border-t border-line pt-6">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">
             Portal audit gizi MBG
           </p>
+          {isAuthenticated ? (
+            <Button
+              variant="gold"
+              className="w-full"
+              onClick={() => {
+                setOpen(false)
+                onNavigate('/dashboard')
+              }}
+            >
+              Buka Dashboard
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                setOpen(false)
+                onNavigate('/login')
+              }}
+            >
+              Login Admin
+            </Button>
+          )}
           <Button
             arrow
             className="w-full"

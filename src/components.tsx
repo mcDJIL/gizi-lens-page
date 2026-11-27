@@ -219,12 +219,12 @@ export function Button({
   }
 
   const sizes = {
-    md: 'py-3.5 pl-6 pr-3.5 text-sm',
-    sm: 'py-2.5 pl-5 pr-2 text-[13px]',
+    md: arrow ? 'py-3.5 pl-6 pr-3.5 text-sm' : 'px-6 py-3.5 text-sm',
+    sm: arrow ? 'py-2.5 pl-5 pr-2 text-[13px]' : 'px-5 py-2.5 text-[13px]',
   }
 
   const iconTone = variant === 'gold' ? 'bg-forest-900 text-gold' : 'bg-gold text-forest-900'
-  const sharedClassName = `group inline-flex cursor-pointer items-center justify-center gap-3 rounded-full font-bold transition-all duration-300 ${variants[variant]} ${sizes[size]} ${className}`
+  const sharedClassName = `group inline-flex cursor-pointer items-center justify-center gap-3 rounded-full text-center font-bold transition-all duration-300 ${variants[variant]} ${sizes[size]} ${className}`
 
   const content = (
     <>

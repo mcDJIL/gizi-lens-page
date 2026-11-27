@@ -1,0 +1,21 @@
+import { getApp, getApps, initializeApp } from 'firebase/app'
+import { getAuth } from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? 'AIzaSyACmA4apgIti3AMyye2BfJrA7blR9u4fE8',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? 'gizilens-32aa6.firebaseapp.com',
+  databaseURL:
+    import.meta.env.VITE_FIREBASE_DATABASE_URL ??
+    'https://gizilens-32aa6-default-rtdb.firebaseio.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ?? 'gizilens-32aa6',
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ?? 'gizilens-32aa6.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '810250927802',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID ?? '1:810250927802:web:6c0da412492c261b8e8c83',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID ?? 'G-Z463XJM653',
+}
+
+export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
+export const auth = getAuth(app)
+export const db = getFirestore(app)

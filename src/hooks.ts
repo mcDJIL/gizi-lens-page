@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 
 /** Adds `is-revealed` to every [data-reveal] element once it enters the viewport. */
-export function useReveal() {
+export function useReveal(key = '') {
   useEffect(() => {
     const elements = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'))
+    if (elements.length === 0) return
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     if (reduce || !('IntersectionObserver' in window)) {
@@ -25,7 +26,7 @@ export function useReveal() {
 
     elements.forEach((el) => observer.observe(el))
     return () => observer.disconnect()
-  }, [])
+  }, [key])
 }
 
 /** Drives the top scroll-progress bar through a CSS variable, no re-renders. */
