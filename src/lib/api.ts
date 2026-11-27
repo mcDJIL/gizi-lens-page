@@ -120,7 +120,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T | null> {
         ...(init?.headers ?? {}),
       },
     })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        console.warn(
+          '[GiziLens API] Bearer token ditolak. Akun perlu klaim admin=true ' +
+            'atau uid terdaftar di FIREBASE_ADMIN_UIDS backend.',
+        )
+      } else if (response.status === 503) {
+        console.warn(
+          '[GiziLens API] Backend belum punya service account Firebase ' +
+            '(set FIREBASE_CREDENTIALS_FILE di server).',
+        )
+      }
+      throw new Error(`HTTP ${response.status}`)
+    }
     if (!response.headers.get('content-type')?.includes('application/json')) {
       throw new Error('Expected JSON response')
     }
