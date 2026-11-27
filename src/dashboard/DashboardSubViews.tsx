@@ -4,6 +4,7 @@ import {
   formatUserRoleLabel,
   formatUserStatusLabel,
   type RegistrationRecord,
+  type TransactionRecord,
 } from '../lib/dashboardData'
 import type { UserStatus } from '../lib/auth'
 
@@ -21,24 +22,22 @@ export type SidebarMenuId =
 type SubViewProps = {
   section: Exclude<SidebarMenuId, 'dashboard'>
   registrations: RegistrationRecord[]
+  regions?: typeof REGIONAL_OVERVIEW
+  transactions?: TransactionRecord[]
   searchQuery: string
-  firestoreStatus: 'online' | 'fallback'
-  seeding: boolean
-  seedNotice: string | null
+  syncStatus: 'online' | 'fallback'
   onToggleUserStatus: (id: string, current: UserStatus) => void
-  onSeedFirestore: () => void
   onBackOverview: () => void
 }
 
 export function DashboardSubView({
   section,
   registrations,
+  regions = REGIONAL_OVERVIEW,
+  transactions = FALLBACK_TRANSACTIONS,
   searchQuery,
-  firestoreStatus,
-  seeding,
-  seedNotice,
+  syncStatus,
   onToggleUserStatus,
-  onSeedFirestore,
   onBackOverview,
 }: SubViewProps) {
   const q = searchQuery.trim().toLowerCase()
@@ -145,7 +144,7 @@ export function DashboardSubView({
   }
 
   if (section === 'sppg' || section === 'menu' || section === 'reports') {
-    const regions = REGIONAL_OVERVIEW.filter((r) =>
+    const regionList = regions.filter((r) =>
       !q ? true : r.province.toLowerCase().includes(q),
     )
 
@@ -175,7 +174,7 @@ export function DashboardSubView({
         </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {regions.map((item) => (
+          {regionList.map((item) => (
             <div key={item.province} className="rounded-2xl border border-[#E5EAE7] bg-[#FAFDFB] p-4">
               <div className="flex items-center justify-between">
                 <p className="text-[15px] font-bold text-[#0F2A1F]">
@@ -220,7 +219,7 @@ export function DashboardSubView({
   }
 
   if (section === 'subscriptions' || section === 'transactions') {
-    const filteredTrx = FALLBACK_TRANSACTIONS.filter((t) =>
+    const filteredTrx = transactions.filter((t) =>
       !q
         ? true
         : t.user.toLowerCase().includes(q) ||
@@ -290,10 +289,11 @@ export function DashboardSubView({
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#EEF2F0] pb-4">
         <div>
           <h2 className="text-[18px] font-extrabold text-[#0F2A1F]">
-            Pengaturan Firebase &amp; Portal
+            Pengaturan Data &amp; Portal
           </h2>
           <p className="mt-1 text-[12.5px] text-[#6B7A72]">
-            Integrasi aktif ke proyek Firebase <span className="font-bold">gizilens-32aa6</span>.
+            Firebase hanya untuk autentikasi. Data aplikasi dibaca dari PostgreSQL melalui API
+            GiziLens.
           </p>
         </div>
         <button
@@ -308,33 +308,29 @@ export function DashboardSubView({
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-[#E5EAE7] bg-[#F8FAF9] p-4">
           <p className="text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#6B7A72]">
-            Status Koneksi Firestore
+            Status Koneksi API
           </p>
           <p className="mt-2 text-[16px] font-extrabold text-[#0F2A1F]">
-            {firestoreStatus === 'online' ? 'Terhubung · Sinkronisasi Real-time' : 'Mode Lokal'}
+            {syncStatus === 'online' ? 'Terhubung · PostgreSQL' : 'Mode Lokal (fallback)'}
           </p>
           <p className="mt-1 text-[12.5px] text-[#6B7A72]">
-            ID Proyek: <span className="font-mono font-semibold text-[#0F2A1F]">gizilens-32aa6</span>
+            Sumber data: <span className="font-mono font-semibold text-[#0F2A1F]">/api/v1</span>
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E5EAE7] bg-[#F8FAF9] p-4">
           <p className="text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#6B7A72]">
-            Sinkronisasi Data Contoh
+            Endpoint Utama
           </p>
-          <p className="mt-1 text-[12.5px] text-[#6B7A72]">
-            Simpan contoh transaksi awal ke koleksi <span className="font-mono">transactions</span> di
-            Firestore.
+          <ul className="mt-2 space-y-1 text-[12px] text-[#526058]">
+            <li className="font-mono">GET /dashboard/kpi</li>
+            <li className="font-mono">GET /users</li>
+            <li className="font-mono">GET /transactions</li>
+            <li className="font-mono">GET /inspections</li>
+          </ul>
+          <p className="mt-2 text-[12px] text-[#6B7A72]">
+            Dokumentasi interaktif tersedia di <span className="font-mono">/docs</span>.
           </p>
-          <button
-            type="button"
-            disabled={seeding}
-            onClick={onSeedFirestore}
-            className="mt-3 cursor-pointer rounded-xl bg-[#073624] px-4 py-2 text-[12.5px] font-bold text-white transition hover:bg-[#05291B] disabled:opacity-60"
-          >
-            {seeding ? 'Menyinkronkan...' : 'Simpan Data Contoh ke Firestore'}
-          </button>
-          {seedNotice && <p className="mt-2 text-[12px] font-medium text-[#059669]">{seedNotice}</p>}
         </div>
       </div>
     </section>

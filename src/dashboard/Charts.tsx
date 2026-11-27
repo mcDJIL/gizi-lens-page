@@ -1,5 +1,11 @@
-import { useState } from 'react'
-import { ACTIVITY_BY_GRANULARITY, type ActivityGranularity } from '../lib/dashboardData'
+import { useEffect, useState } from 'react'
+import {
+  ACTIVITY_BY_GRANULARITY,
+  COMPLIANCE_FALLBACK,
+  type ActivityGranularity,
+  type ComplianceSegment,
+} from '../lib/dashboardData'
+import { fetchActivity, fetchCompliance } from '../lib/api'
 import { DotsVerticalIcon, InfoCircleIcon, TrendUpIcon } from './DashboardIcons'
 
 function buildSmoothPath(coords: Array<{ x: number; y: number }>): string {
@@ -19,8 +25,25 @@ function buildSmoothPath(coords: Array<{ x: number; y: number }>): string {
 export function PlatformActivityCard({ onViewReport }: { onViewReport: () => void }) {
   const [granularity, setGranularity] = useState<ActivityGranularity>('Mingguan')
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [remote, setRemote] = useState<{
+    granularity: ActivityGranularity
+    data: NonNullable<Awaited<ReturnType<typeof fetchActivity>>>
+  } | null>(null)
 
-  const dataset = ACTIVITY_BY_GRANULARITY[granularity]
+  useEffect(() => {
+    let cancelled = false
+    fetchActivity(granularity).then((result) => {
+      if (!cancelled && result) setRemote({ granularity, data: result })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [granularity])
+
+  const dataset =
+    remote?.granularity === granularity
+      ? remote.data
+      : ACTIVITY_BY_GRANULARITY[granularity]
   const width = 680
   const height = 220
   const padLeft = 42
@@ -238,42 +261,43 @@ export function PlatformActivityCard({ onViewReport }: { onViewReport: () => voi
   )
 }
 
-const COMPLIANCE_SEGMENTS = [
-  {
-    label: 'Sesuai Target (AKG)',
-    subtitle: 'Kalori & makro terpenuhi',
-    pct: 72,
-    count: '229.284 baki',
-    color: '#10B981',
-  },
-  {
-    label: 'Perlu Tinjauan Ahli Gizi',
-    subtitle: 'Selisih porsi minor',
-    pct: 18,
-    count: '57.321 baki',
-    color: '#F59E0B',
-  },
-  {
-    label: 'Di Bawah Standar',
-    subtitle: 'Perlu reformulasi menu',
-    pct: 10,
-    count: '31.845 baki',
-    color: '#EF4444',
-  },
-]
-
-const COMPLIANCE_ARCS = COMPLIANCE_SEGMENTS.reduce<
-  Array<(typeof COMPLIANCE_SEGMENTS)[number] & { offsetPct: number }>
->((acc, seg) => {
-  const prev = acc[acc.length - 1]
-  const offsetPct = prev ? prev.offsetPct + prev.pct : 0
-  acc.push({ ...seg, offsetPct })
-  return acc
-}, [])
+function formatCompactTotal(value: number): string {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 2 })} jt`
+  }
+  if (value >= 1_000) {
+    return `${(value / 1_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} rb`
+  }
+  return value.toLocaleString('id-ID')
+}
 
 export function NutritionalComplianceCard() {
+  const [segments, setSegments] = useState<ComplianceSegment[]>(COMPLIANCE_FALLBACK)
+  const [total, setTotal] = useState(318450)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchCompliance().then((result) => {
+      if (cancelled || !result || result.categories.length === 0) return
+      setSegments(result.categories)
+      setTotal(result.total)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const radius = 58
   const circumference = 2 * Math.PI * radius
+  const arcs = segments.reduce<Array<ComplianceSegment & { offsetPct: number }>>(
+    (acc, segment) => {
+      const previous = acc[acc.length - 1]
+      const offsetPct = previous ? previous.offsetPct + previous.percentage : 0
+      acc.push({ ...segment, offsetPct })
+      return acc
+    },
+    [],
+  )
 
   return (
     <section className="flex flex-col justify-between rounded-2xl border border-[#E5EAE7] bg-white p-5 shadow-[0_1px_2px_rgba(15,42,31,0.03)] sm:p-6">
@@ -305,17 +329,17 @@ export function NutritionalComplianceCard() {
                 stroke="#EEF2F0"
                 strokeWidth="18"
               />
-              {COMPLIANCE_ARCS.map((seg) => {
-                const dashLen = (seg.pct / 100) * circumference
+              {arcs.map((seg) => {
+                const dashLen = (seg.percentage / 100) * circumference
                 const dashOffset = -((seg.offsetPct / 100) * circumference)
                 return (
                   <circle
-                    key={seg.label}
+                    key={seg.key}
                     cx="80"
                     cy="80"
                     r={radius}
                     fill="none"
-                    stroke={seg.color}
+                    stroke={seg.colorHex}
                     strokeWidth="18"
                     strokeDasharray={`${dashLen} ${circumference}`}
                     strokeDashoffset={dashOffset}
@@ -326,7 +350,7 @@ export function NutritionalComplianceCard() {
 
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
               <span className="text-[22px] font-extrabold tracking-[-0.03em] text-[#0F2A1F]">
-                318,4 rb
+                {formatCompactTotal(total)}
               </span>
               <span className="text-[11px] font-medium text-[#6B7A72]">Penilaian</span>
             </div>
@@ -334,15 +358,15 @@ export function NutritionalComplianceCard() {
         </div>
 
         <div className="space-y-2.5">
-          {COMPLIANCE_SEGMENTS.map((seg) => (
+          {segments.map((seg) => (
             <div
-              key={seg.label}
+              key={seg.key}
               className="flex items-center justify-between gap-3 rounded-xl bg-[#F8FAF9] px-3.5 py-2.5"
             >
               <div className="flex items-center gap-2.5">
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: seg.color }}
+                  style={{ backgroundColor: seg.colorHex }}
                 />
                 <div>
                   <p className="text-[12.5px] font-bold text-[#0F2A1F]">{seg.label}</p>
@@ -350,8 +374,12 @@ export function NutritionalComplianceCard() {
                 </div>
               </div>
               <div className="text-right tabular-nums">
-                <p className="text-[12.5px] font-extrabold text-[#0F2A1F]">{seg.pct}%</p>
-                <p className="text-[11px] text-[#6B7A72]">{seg.count}</p>
+                <p className="text-[12.5px] font-extrabold text-[#0F2A1F]">
+                  {Math.round(seg.percentage)}%
+                </p>
+                <p className="text-[11px] text-[#6B7A72]">
+                  {seg.bakiCount.toLocaleString('id-ID')} baki
+                </p>
               </div>
             </div>
           ))}

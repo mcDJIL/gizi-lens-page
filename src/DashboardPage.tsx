@@ -32,13 +32,18 @@ import {
   formatUserStatusLabel,
   getInitials,
   mapProfileToRegistration,
-  seedBaselineTransactionsToFirestore,
-  subscribeFirestoreUsers,
-  toggleFirestoreUserStatus,
   type RegistrationRecord,
   type TimeframeKey,
   type TransactionRecord,
 } from './lib/dashboardData'
+import {
+  fetchKpi,
+  fetchRegions,
+  fetchTransactions,
+  fetchUsers,
+  patchUserStatus,
+  type ApiUser,
+} from './lib/api'
 
 type DashboardPageProps = {
   user: UserProfile
@@ -94,6 +99,34 @@ const AVATAR_TONE_CLASS: Record<RegistrationRecord['avatarTone'], string> = {
   amber: 'bg-[#FFFBEB] text-[#D97706]',
 }
 
+function toneForRole(role: string): RegistrationRecord['avatarTone'] {
+  switch (role) {
+    case 'Ahli Gizi':
+      return 'emerald'
+    case 'Petugas SPPG':
+      return 'blue'
+    case 'PIC Sekolah':
+      return 'purple'
+    default:
+      return 'amber'
+  }
+}
+
+function mapApiRegistration(item: ApiUser): RegistrationRecord {
+  return {
+    id: item.uid,
+    initials: getInitials(item.name),
+    avatarTone: toneForRole(item.role),
+    name: item.name,
+    email: item.email,
+    role: item.role as RegistrationRecord['role'],
+    institution: item.institution,
+    dateLabel: item.createdAtLabel,
+    status: item.status,
+    isFirestore: true,
+  }
+}
+
 function getIndonesianGreeting(): string {
   const hour = new Date().getHours()
   if (hour >= 4 && hour < 11) return 'Selamat Pagi'
@@ -122,21 +155,76 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
   const [searchQuery, setSearchQuery] = useState('')
   const [regPage, setRegPage] = useState(1)
   const [trxPage, setTrxPage] = useState(1)
-  const [firestoreUsers, setFirestoreUsers] = useState<RegistrationRecord[]>([])
-  const [firestoreStatus, setFirestoreStatus] = useState<'online' | 'fallback'>('online')
+  const [apiUsers, setApiUsers] = useState<RegistrationRecord[]>([])
+  const [apiStatus, setApiStatus] = useState<'online' | 'fallback'>('fallback')
+  const [apiKpi, setApiKpi] = useState<Awaited<ReturnType<typeof fetchKpi>>>(null)
+  const [apiRegions, setApiRegions] = useState<typeof REGIONAL_OVERVIEW | null>(null)
+  const [apiTransactions, setApiTransactions] = useState<TransactionRecord[] | null>(null)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
-  const [seeding, setSeeding] = useState(false)
-  const [seedNotice, setSeedNotice] = useState<string | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const unsubscribe = subscribeFirestoreUsers(
-      (records) => setFirestoreUsers(records),
-      (status) => setFirestoreStatus(status),
-    )
-    return () => unsubscribe()
-  }, [])
+    let cancelled = false
+    fetchKpi(timeframe).then((result) => {
+      if (!cancelled && result) setApiKpi(result)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [timeframe])
+
+  useEffect(() => {
+    let cancelled = false
+    const timer = window.setTimeout(() => {
+      fetchUsers({ search: searchQuery, pageSize: 100 }).then((result) => {
+        if (cancelled) return
+        if (result) {
+          setApiUsers(result.items.map(mapApiRegistration))
+          setApiStatus('online')
+        } else {
+          setApiStatus('fallback')
+        }
+      })
+    }, 250)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
+    let cancelled = false
+    fetchRegions(searchQuery).then((result) => {
+      if (!cancelled && result) setApiRegions(result.items)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
+    let cancelled = false
+    fetchTransactions({ search: searchQuery, pageSize: 100 }).then((result) => {
+      if (cancelled) return
+      setApiTransactions(
+        result
+          ? result.items.map((item) => ({
+              orderId: item.orderId,
+              user: item.user,
+              organization: item.organization,
+              plan: item.plan as TransactionRecord['plan'],
+              planIcon: item.planIcon,
+              amount: item.amount,
+              status: item.status as TransactionRecord['status'],
+            }))
+          : null,
+      )
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [searchQuery])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -156,14 +244,14 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
 
   const mergedRegistrations = useMemo(() => {
     const baseList =
-      firestoreUsers.length > 0 ? firestoreUsers : [mapProfileToRegistration(user)]
+      apiUsers.length > 0 ? apiUsers : [mapProfileToRegistration(user)]
 
     const existingEmails = new Set(baseList.map((u) => u.email.toLowerCase()))
     const seededExtras = FALLBACK_REGISTRATIONS.filter(
       (item) => !existingEmails.has(item.email.toLowerCase()),
     )
     return [...baseList, ...seededExtras]
-  }, [firestoreUsers, user])
+  }, [apiUsers, user])
 
   const filteredRegistrations = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -178,6 +266,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
   }, [mergedRegistrations, searchQuery])
 
   const filteredTransactions = useMemo(() => {
+    if (apiTransactions) return apiTransactions
     const q = searchQuery.trim().toLowerCase()
     if (!q) return FALLBACK_TRANSACTIONS
     return FALLBACK_TRANSACTIONS.filter(
@@ -187,17 +276,18 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
         trx.organization.toLowerCase().includes(q) ||
         trx.plan.toLowerCase().includes(q),
     )
-  }, [searchQuery])
+  }, [apiTransactions, searchQuery])
 
   const filteredRegions = useMemo(() => {
+    if (apiRegions) return apiRegions
     const q = searchQuery.trim().toLowerCase()
     if (!q) return REGIONAL_OVERVIEW
     const matched = REGIONAL_OVERVIEW.filter((r) => r.province.toLowerCase().includes(q))
     return matched.length > 0 ? matched : REGIONAL_OVERVIEW
-  }, [searchQuery])
+  }, [apiRegions, searchQuery])
 
-  const kpi = KPI_BY_TIMEFRAME[timeframe]
-  const liveUserOffset = firestoreUsers.length
+  const kpi = apiKpi ?? KPI_BY_TIMEFRAME[timeframe]
+  const liveUserOffset = apiUsers.length
   const totalUsersDisplay = (kpi.totalUsers + liveUserOffset).toLocaleString('id-ID')
 
   const regTotalPages = Math.max(1, Math.ceil(filteredRegistrations.length / 4))
@@ -210,14 +300,14 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
 
   const handleToggleUserStatus = async (id: string, current: UserStatus) => {
     const next: UserStatus = current === 'Verified' ? 'Pending Approval' : 'Verified'
-    await toggleFirestoreUserStatus(id, next)
-  }
-
-  const handleSeedFirestore = async () => {
-    setSeeding(true)
-    const result = await seedBaselineTransactionsToFirestore()
-    setSeedNotice(result.message)
-    setSeeding(false)
+    const updated = await patchUserStatus(id, next)
+    if (updated) {
+      setApiUsers((previous) =>
+        previous.map((item) =>
+          item.id === id ? { ...item, status: updated.status } : item,
+        ),
+      )
+    }
   }
 
   const activeSectionLabel =
@@ -447,10 +537,10 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                       </div>
                       <div className="rounded-xl bg-[#ECFDF5] p-2.5">
                         <p className="font-semibold text-[#059669]">
-                          {firestoreUsers.length} akun live di Firestore
+                          {apiUsers.length} akun live di PostgreSQL
                         </p>
                         <p className="mt-0.5 text-[11px] text-[#047857]">
-                          Proyek gizilens-32aa6 aktif tersinkronisasi.
+                          API GiziLens terhubung ke database aplikasi.
                         </p>
                       </div>
                     </div>
@@ -460,7 +550,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
 
               <span className="hidden items-center gap-2 rounded-full border border-[#A7F3D0] bg-[#ECFDF5] px-3 py-1.5 text-[11.5px] font-bold text-[#059669] sm:inline-flex">
                 <span className="h-2 w-2 rounded-full bg-[#10B981]" />
-                {firestoreStatus === 'online' ? 'Sinkronisasi BGN: Online' : 'Sinkronisasi BGN: Lokal'}
+                {apiStatus === 'online' ? 'Sinkronisasi BGN: Online' : 'Sinkronisasi BGN: Lokal'}
               </span>
 
               <div className="relative">
@@ -510,7 +600,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                       }}
                       className="flex w-full cursor-pointer items-center rounded-xl px-3 py-2 text-left text-[12.5px] font-semibold text-[#0F2A1F] hover:bg-[#F7F9F8]"
                     >
-                      Pengaturan Firebase
+                      Pengaturan Data
                     </button>
                     <button
                       type="button"
@@ -535,12 +625,11 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
             <DashboardSubView
               section={activeMenu}
               registrations={mergedRegistrations}
+              regions={filteredRegions}
+              transactions={filteredTransactions}
               searchQuery={searchQuery}
-              firestoreStatus={firestoreStatus}
-              seeding={seeding}
-              seedNotice={seedNotice}
+              syncStatus={apiStatus}
               onToggleUserStatus={handleToggleUserStatus}
-              onSeedFirestore={handleSeedFirestore}
               onBackOverview={() => setActiveMenu('dashboard')}
             />
           ) : (
@@ -868,7 +957,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                                   }}
                                   title={
                                     row.isFirestore
-                                      ? 'Klik untuk ubah status verifikasi di Firestore'
+                                      ? 'Klik untuk ubah status verifikasi di database'
                                       : undefined
                                   }
                                   className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold ${
