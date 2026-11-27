@@ -1,5 +1,5 @@
 export const DEMO_LINKS = {
-  /** Ganti URL ini dengan tautan Google Drive file/folder aplikasi GiziLens */
-  appDownload: 'https://drive.google.com/',
+  /** Tautan Google Drive folder aplikasi GiziLens */
+  appDownload: 'https://drive.google.com/drive/folders/1mjwLbTdlMk9gfnxbn4mnKhsqqz2UQQFt?usp=sharing',
   gamification: 'https://game.gizilens.web.id',
 } as const
