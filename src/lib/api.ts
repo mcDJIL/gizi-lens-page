@@ -3,6 +3,7 @@ import type {
   RegionStat,
   TimeframeKey,
 } from './dashboardData'
+import { auth } from './firebase'
 
 const RAW_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ''
 const API_BASE = RAW_BASE.replace(/\/+$/, '')
@@ -53,6 +54,42 @@ export type ApiTransaction = {
   paymentStatus: string
 }
 
+export type ApiPlan = {
+  id: string
+  name: string
+  tagline: string | null
+  monthlyEquivalentPrice: number
+  billedPrice: number
+  originalPrice: number | null
+  billingPeriod: string | null
+  isPopular: boolean
+  badgeText: string | null
+  features: string[]
+  ctaLabel: string
+}
+
+export type ApiInspection = {
+  id: string
+  batchCode: string
+  schoolName: string | null
+  session: string | null
+  complianceStatus: string
+  totalNetWeight: string | null
+  scannedAt: string | null
+  targetGroup: string | null
+  officerName: string | null
+  unitOperational: string | null
+  imageUrl: string | null
+}
+
+export type ApiSummary = {
+  users: number
+  sppgUnits: number
+  schools: number
+  inspections: number
+  paymentOrders: number
+}
+
 type Paginated<T> = {
   items: T[]
   total: number
@@ -79,6 +116,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T | null> {
         Accept: 'application/json',
         ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
         Authorization: `Bearer ${token}`,
+        ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
         ...(init?.headers ?? {}),
       },
     })
@@ -179,6 +217,38 @@ export async function fetchTransactions(params: {
   if (params.page) query.set('page', String(params.page))
   query.set('pageSize', String(params.pageSize ?? 100))
   return request<Paginated<ApiTransaction>>(`/transactions?${query.toString()}`)
+}
+
+export async function fetchPlans() {
+  return request<{ items: ApiPlan[] }>('/plans')
+}
+
+export async function fetchInspections(params: {
+  search?: string
+  status?: string
+  page?: number
+  pageSize?: number
+}) {
+  const query = new URLSearchParams()
+  if (params.search?.trim()) query.set('search', params.search.trim())
+  if (params.status) query.set('status', params.status)
+  if (params.page) query.set('page', String(params.page))
+  query.set('pageSize', String(params.pageSize ?? 50))
+  return request<Paginated<ApiInspection>>(`/inspections?${query.toString()}`)
+}
+
+export async function fetchSummary() {
+  return request<ApiSummary>('/dashboard/summary')
+}
+
+export function resolveMediaUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (/^https?:\/\//i.test(path)) return path
+  return `${API_BASE}${path}`
+}
+
+export function getApiBaseUrl(): string {
+  return API_BASE
 }
 
 export function isApiConfigured(): boolean {

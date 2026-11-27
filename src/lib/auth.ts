@@ -1,7 +1,6 @@
 import { signInWithEmailAndPassword, signOut, type User } from 'firebase/auth'
 import { auth } from './firebase'
-import { fetchUser, fetchUsers, type ApiUser } from './api'
-import { fetchAdminProfile } from './api'
+import { fetchAdminProfile, fetchUser, fetchUsers, type ApiUser } from './api'
 
 export type UserRole =
   | 'admin'
@@ -82,6 +81,21 @@ export async function fetchUserProfile(user: User): Promise<UserProfile | null> 
     }
   }
 
+  // Endpoint admin khusus Firebase (klaim admin / FIREBASE_ADMIN_UIDS).
+  const adminProfile = await fetchAdminProfile()
+  if (adminProfile) {
+    return {
+      uid: adminProfile.uid,
+      name: adminProfile.name || adminProfile.email.split('@')[0],
+      email: adminProfile.email,
+      role: allowlisted ? 'BGN National Admin' : (adminProfile.role as UserRole),
+      institution: adminProfile.institution,
+      status: adminProfile.status,
+      createdAtLabel: adminProfile.createdAtLabel,
+      createdAtMs: adminProfile.createdAtMs,
+    }
+  }
+
   // API/DB belum tersedia: izinkan email admin yang dikonfigurasi (atau semua
   // saat daftar kosong untuk mode demo lokal).
   const email = (user.email ?? '').toLowerCase()
@@ -97,7 +111,6 @@ export async function fetchUserProfile(user: User): Promise<UserProfile | null> 
     status: 'Verified',
     createdAtLabel: 'Hari ini',
   }
-  return { ...profile, role: profile.role as UserRole }
 }
 
 export async function loginWithEmail(email: string, password: string): Promise<UserProfile> {

@@ -14,7 +14,6 @@ import {
   ReceiptIcon,
   SchoolCapIcon,
   SettingsIcon,
-  ShieldIcon,
   SubscriptionIcon,
   TrendUpIcon,
   UsersIcon,
@@ -24,6 +23,7 @@ import {
 import { DashboardSubView, type SidebarMenuId } from './dashboard/DashboardSubViews'
 import type { UserProfile, UserStatus } from './lib/auth'
 import {
+  FALLBACK_REGISTRATIONS,
   FALLBACK_TRANSACTIONS,
   KPI_BY_TIMEFRAME,
   REGIONAL_OVERVIEW,
@@ -36,11 +36,17 @@ import {
   type TransactionRecord,
 } from './lib/dashboardData'
 import {
+  fetchInspections,
   fetchKpi,
+  fetchPlans,
   fetchRegions,
+  fetchSummary,
   fetchTransactions,
   fetchUsers,
   patchUserStatus,
+  type ApiInspection,
+  type ApiPlan,
+  type ApiSummary,
   type ApiUser,
 } from './lib/api'
 
@@ -76,9 +82,8 @@ const MAIN_MENU: Array<{
 const GOVERNANCE_MENU: Array<{
   id: SidebarMenuId
   label: string
-  icon: typeof ShieldIcon
+  icon: typeof SettingsIcon
 }> = [
-  { id: 'admins', label: 'Manajemen Admin', icon: ShieldIcon },
   { id: 'settings', label: 'Pengaturan', icon: SettingsIcon },
 ]
 
@@ -159,6 +164,9 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
   const [apiKpi, setApiKpi] = useState<Awaited<ReturnType<typeof fetchKpi>>>(null)
   const [apiRegions, setApiRegions] = useState<typeof REGIONAL_OVERVIEW | null>(null)
   const [apiTransactions, setApiTransactions] = useState<TransactionRecord[] | null>(null)
+  const [apiPlans, setApiPlans] = useState<ApiPlan[] | null>(null)
+  const [apiInspections, setApiInspections] = useState<ApiInspection[] | null>(null)
+  const [apiSummary, setApiSummary] = useState<ApiSummary | null>(null)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -226,6 +234,32 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
   }, [searchQuery])
 
   useEffect(() => {
+    let cancelled = false
+    fetchPlans().then((result) => {
+      if (!cancelled) setApiPlans(result?.items ?? null)
+    })
+    fetchSummary().then((result) => {
+      if (!cancelled) setApiSummary(result)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const timer = window.setTimeout(() => {
+      fetchInspections({ search: searchQuery, pageSize: 50 }).then((result) => {
+        if (!cancelled) setApiInspections(result?.items ?? null)
+      })
+    }, 250)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
@@ -242,15 +276,17 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
   }, [])
 
   const mergedRegistrations = useMemo(() => {
-    const baseList =
-      apiUsers.length > 0 ? apiUsers : [mapProfileToRegistration(user)]
+    if (apiStatus === 'online') {
+      return apiUsers.length > 0 ? apiUsers : [mapProfileToRegistration(user)]
+    }
 
+    const baseList = [mapProfileToRegistration(user)]
     const existingEmails = new Set(baseList.map((u) => u.email.toLowerCase()))
     const seededExtras = FALLBACK_REGISTRATIONS.filter(
       (item) => !existingEmails.has(item.email.toLowerCase()),
     )
     return [...baseList, ...seededExtras]
-  }, [apiUsers, user])
+  }, [apiStatus, apiUsers, user])
 
   const filteredRegistrations = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -286,8 +322,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
   }, [apiRegions, searchQuery])
 
   const kpi = apiKpi ?? KPI_BY_TIMEFRAME[timeframe]
-  const liveUserOffset = apiUsers.length
-  const totalUsersDisplay = (kpi.totalUsers + liveUserOffset).toLocaleString('id-ID')
+  const totalUsersDisplay = kpi.totalUsers.toLocaleString('id-ID')
 
   const regTotalPages = Math.max(1, Math.ceil(filteredRegistrations.length / 4))
   const safeRegPage = Math.min(regPage, regTotalPages)
@@ -626,6 +661,9 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
               registrations={mergedRegistrations}
               regions={filteredRegions}
               transactions={filteredTransactions}
+              plans={apiPlans}
+              inspections={apiInspections}
+              summary={apiSummary}
               searchQuery={searchQuery}
               syncStatus={apiStatus}
               onToggleUserStatus={handleToggleUserStatus}
@@ -820,11 +858,18 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                       <span className="h-2.5 w-2.5 rounded-full bg-[#073624]" />
                       Kesiapan Infrastruktur
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveMenu('sppg')}
+                      className="cursor-pointer font-bold text-[#059669] hover:text-[#047857]"
+                    >
+                      Lihat Semua ›
+                    </button>
                   </div>
                 </div>
 
                 <div className="mt-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
-                  {filteredRegions.map((region) => (
+                  {filteredRegions.slice(0, 5).map((region) => (
                     <article
                       key={region.province}
                       className="flex flex-col justify-between rounded-2xl border border-[#E5EAE7] bg-[#FAFDFB] p-4 transition hover:border-[#A7F3D0]"
