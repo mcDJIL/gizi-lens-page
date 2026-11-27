@@ -13,22 +13,34 @@ import {
 import type { UserProfile, UserRole, UserStatus } from './auth'
 import { db } from './firebase'
 
-export type TimeframeKey = 'Today' | 'Last 7 Days' | 'Last 30 Days' | 'This Year' | 'Custom'
-export type ActivityGranularity = 'Daily' | 'Weekly' | 'Monthly'
+export type TimeframeKey =
+  | 'Hari Ini'
+  | '7 Hari Terakhir'
+  | '30 Hari Terakhir'
+  | 'Tahun Ini'
+  | 'Kustom'
+
+export type ActivityGranularity = 'Harian' | 'Mingguan' | 'Bulanan'
 
 export type KpiSnapshot = {
   totalUsers: number
   usersTrend: string
+  usersNote: string
   registeredSppg: number
   sppgTrend: string
+  sppgNote: string
   registeredSchools: number
   schoolsTrend: string
+  schoolsNote: string
   totalAssessments: number
   assessmentsTrend: string
+  assessmentsNote: string
   activePremium: number
   premiumTrend: string
+  premiumNote: string
   totalRevenue: string
   revenueTrend: string
+  revenueNote: string
 }
 
 export type ActivityPoint = {
@@ -63,82 +75,112 @@ export type TransactionRecord = {
   orderId: string
   user: string
   organization: string
-  plan: 'Annual Pro' | 'Enterprise Kitchen' | 'Monthly Pro' | 'Multi-School Plan'
+  plan: 'Tahunan Pro' | 'Dapur Enterprise' | 'Bulanan Pro' | 'Paket Multi-Sekolah'
   planIcon: 'crown' | 'building' | 'spark' | 'school'
   amount: string
-  status: 'Confirmed' | 'Processing'
+  status: 'Terkonfirmasi' | 'Diproses'
 }
 
 export const KPI_BY_TIMEFRAME: Record<TimeframeKey, KpiSnapshot> = {
-  Today: {
+  'Hari Ini': {
     totalUsers: 12480,
-    usersTrend: '+2.1%',
+    usersTrend: '+2,1%',
+    usersNote: 'vs kemarin',
     registeredSppg: 846,
-    sppgTrend: '+4 units',
+    sppgTrend: '+4 unit',
+    sppgNote: 'dapur aktif',
     registeredSchools: 4210,
-    schoolsTrend: '+1.4%',
+    schoolsTrend: '+1,4%',
+    schoolsNote: 'sekolah penerima',
     totalAssessments: 11840,
-    assessmentsTrend: '+15.6%',
+    assessmentsTrend: '+15,6%',
+    assessmentsNote: 'baki terverifikasi',
     activePremium: 1892,
-    premiumTrend: '+3.2%',
-    totalRevenue: 'Rp 18.4M',
-    revenueTrend: '+9.4%',
+    premiumTrend: '+3,2%',
+    premiumNote: 'konversi',
+    totalRevenue: 'Rp 18,4 Jt',
+    revenueTrend: '+9,4%',
+    revenueNote: 'net terkonfirmasi',
   },
-  'Last 7 Days': {
+  '7 Hari Terakhir': {
     totalUsers: 12480,
-    usersTrend: '+6.8%',
+    usersTrend: '+6,8%',
+    usersNote: 'vs pekan lalu',
     registeredSppg: 846,
-    sppgTrend: '+11 units',
+    sppgTrend: '+11 unit',
+    sppgNote: 'dapur aktif',
     registeredSchools: 4210,
-    schoolsTrend: '+4.2%',
+    schoolsTrend: '+4,2%',
+    schoolsNote: 'sekolah penerima',
     totalAssessments: 78420,
-    assessmentsTrend: '+12.4%',
+    assessmentsTrend: '+12,4%',
+    assessmentsNote: 'baki terverifikasi',
     activePremium: 1892,
-    premiumTrend: '+9.1%',
-    totalRevenue: 'Rp 118.6M',
-    revenueTrend: '+11.8%',
+    premiumTrend: '+9,1%',
+    premiumNote: 'konversi',
+    totalRevenue: 'Rp 118,6 Jt',
+    revenueTrend: '+11,8%',
+    revenueNote: 'net terkonfirmasi',
   },
-  'Last 30 Days': {
+  '30 Hari Terakhir': {
     totalUsers: 12480,
-    usersTrend: '+14.2%',
+    usersTrend: '+14,2%',
+    usersNote: 'vs bulan lalu',
     registeredSppg: 846,
-    sppgTrend: '+28 units',
+    sppgTrend: '+28 unit',
+    sppgNote: 'dapur aktif',
     registeredSchools: 4210,
-    schoolsTrend: '+9.5%',
+    schoolsTrend: '+9,5%',
+    schoolsNote: 'sekolah penerima',
     totalAssessments: 318450,
-    assessmentsTrend: '+22.8%',
+    assessmentsTrend: '+22,8%',
+    assessmentsNote: 'baki terverifikasi',
     activePremium: 1892,
-    premiumTrend: '+18.4%',
-    totalRevenue: 'Rp 473.0M',
-    revenueTrend: '+16.7%',
+    premiumTrend: '+18,4%',
+    premiumNote: 'konversi',
+    totalRevenue: 'Rp 473,0 Jt',
+    revenueTrend: '+16,7%',
+    revenueNote: 'net terkonfirmasi',
   },
-  'This Year': {
+  'Tahun Ini': {
     totalUsers: 12480,
-    usersTrend: '+64.0%',
+    usersTrend: '+64,0%',
+    usersNote: 'vs tahun lalu',
     registeredSppg: 846,
-    sppgTrend: '+214 units',
+    sppgTrend: '+214 unit',
+    sppgNote: 'dapur aktif',
     registeredSchools: 4210,
-    schoolsTrend: '+48.3%',
+    schoolsTrend: '+48,3%',
+    schoolsNote: 'sekolah penerima',
     totalAssessments: 2840120,
-    assessmentsTrend: '+74.5%',
+    assessmentsTrend: '+74,5%',
+    assessmentsNote: 'baki terverifikasi',
     activePremium: 1892,
-    premiumTrend: '+52.1%',
-    totalRevenue: 'Rp 4.12B',
-    revenueTrend: '+61.3%',
+    premiumTrend: '+52,1%',
+    premiumNote: 'konversi',
+    totalRevenue: 'Rp 4,12 M',
+    revenueTrend: '+61,3%',
+    revenueNote: 'net terkonfirmasi',
   },
-  Custom: {
+  Kustom: {
     totalUsers: 12480,
-    usersTrend: '+11.4%',
+    usersTrend: '+11,4%',
+    usersNote: 'periode dipilih',
     registeredSppg: 846,
-    sppgTrend: '+19 units',
+    sppgTrend: '+19 unit',
+    sppgNote: 'dapur aktif',
     registeredSchools: 4210,
-    schoolsTrend: '+7.8%',
+    schoolsTrend: '+7,8%',
+    schoolsNote: 'sekolah penerima',
     totalAssessments: 241600,
-    assessmentsTrend: '+19.2%',
+    assessmentsTrend: '+19,2%',
+    assessmentsNote: 'baki terverifikasi',
     activePremium: 1892,
-    premiumTrend: '+14.7%',
-    totalRevenue: 'Rp 364.2M',
-    revenueTrend: '+15.1%',
+    premiumTrend: '+14,7%',
+    premiumNote: 'konversi',
+    totalRevenue: 'Rp 364,2 Jt',
+    revenueTrend: '+15,1%',
+    revenueNote: 'net terkonfirmasi',
   },
 }
 
@@ -146,11 +188,11 @@ export const ACTIVITY_BY_GRANULARITY: Record<
   ActivityGranularity,
   { subtitle: string; total: string; trend: string; highlightLabel: string; points: ActivityPoint[] }
 > = {
-  Daily: {
-    subtitle: 'Daily Total Assessments',
-    total: '11,840',
-    trend: '+8.6% vs yesterday',
-    highlightLabel: '11,840 baki',
+  Harian: {
+    subtitle: 'Total Penilaian Harian',
+    total: '11.840',
+    trend: '+8,6% dibanding kemarin',
+    highlightLabel: '11.840 baki',
     points: [
       { label: '06:00', evaluated: 12000, previous: 9000 },
       { label: '08:00', evaluated: 28000, previous: 21000 },
@@ -158,37 +200,37 @@ export const ACTIVITY_BY_GRANULARITY: Record<
       { label: '12:00', evaluated: 72000, previous: 54000 },
       { label: '14:00', evaluated: 64000, previous: 51000 },
       { label: '16:00', evaluated: 56000, previous: 42000 },
-      { label: 'Now', evaluated: 81000, previous: 63000 },
+      { label: 'Sekarang', evaluated: 81000, previous: 63000 },
     ],
   },
-  Weekly: {
-    subtitle: 'Weekly Total Assessments',
-    total: '78,420',
-    trend: '+12.4% vs previous week',
-    highlightLabel: '78,420 baki',
+  Mingguan: {
+    subtitle: 'Total Penilaian Mingguan',
+    total: '78.420',
+    trend: '+12,4% dibanding pekan lalu',
+    highlightLabel: '78.420 baki',
     points: [
-      { label: 'Mon', evaluated: 21000, previous: 18000 },
-      { label: 'Tue', evaluated: 33000, previous: 26000 },
-      { label: 'Wed', evaluated: 30000, previous: 29000 },
-      { label: 'Thu', evaluated: 46000, previous: 53000 },
-      { label: 'Fri', evaluated: 79000, previous: 68000 },
-      { label: 'Sat', evaluated: 71000, previous: 63000 },
-      { label: 'Sun (Today)', evaluated: 86000, previous: 72000 },
+      { label: 'Sen', evaluated: 21000, previous: 18000 },
+      { label: 'Sel', evaluated: 33000, previous: 26000 },
+      { label: 'Rab', evaluated: 30000, previous: 29000 },
+      { label: 'Kam', evaluated: 46000, previous: 53000 },
+      { label: 'Jum', evaluated: 79000, previous: 68000 },
+      { label: 'Sab', evaluated: 71000, previous: 63000 },
+      { label: 'Min (Hari Ini)', evaluated: 86000, previous: 72000 },
     ],
   },
-  Monthly: {
-    subtitle: 'Monthly Total Assessments',
-    total: '318,450',
-    trend: '+22.8% vs previous month',
-    highlightLabel: '318,450 baki',
+  Bulanan: {
+    subtitle: 'Total Penilaian Bulanan',
+    total: '318.450',
+    trend: '+22,8% dibanding bulan lalu',
+    highlightLabel: '318.450 baki',
     points: [
-      { label: 'W1', evaluated: 38000, previous: 31000 },
-      { label: 'W2', evaluated: 51000, previous: 42000 },
-      { label: 'W3', evaluated: 64000, previous: 53000 },
-      { label: 'W4', evaluated: 71000, previous: 60000 },
-      { label: 'W5', evaluated: 68000, previous: 58000 },
-      { label: 'W6', evaluated: 82000, previous: 67000 },
-      { label: 'Current', evaluated: 90000, previous: 74000 },
+      { label: 'P1', evaluated: 38000, previous: 31000 },
+      { label: 'P2', evaluated: 51000, previous: 42000 },
+      { label: 'P3', evaluated: 64000, previous: 53000 },
+      { label: 'P4', evaluated: 71000, previous: 60000 },
+      { label: 'P5', evaluated: 68000, previous: 58000 },
+      { label: 'P6', evaluated: 82000, previous: 67000 },
+      { label: 'Saat Ini', evaluated: 90000, previous: 74000 },
     ],
   },
 }
@@ -245,7 +287,7 @@ export const FALLBACK_REGISTRATIONS: RegistrationRecord[] = [
     email: 'nurul.gizi@gmail.com',
     role: 'Ahli Gizi',
     institution: 'SPPG Cibinong 02',
-    dateLabel: 'Today, 10:45',
+    dateLabel: 'Hari ini, 10:45',
     status: 'Pending Approval',
   },
   {
@@ -256,7 +298,7 @@ export const FALLBACK_REGISTRATIONS: RegistrationRecord[] = [
     email: 'bambang.sppg@gmail.com',
     role: 'Petugas SPPG',
     institution: 'SPPG Sukmajaya 01',
-    dateLabel: 'Today, 09:20',
+    dateLabel: 'Hari ini, 09:20',
     status: 'Verified',
   },
   {
@@ -267,7 +309,7 @@ export const FALLBACK_REGISTRATIONS: RegistrationRecord[] = [
     email: 'siti.sdn01@sekolah.id',
     role: 'PIC Sekolah',
     institution: 'SDN Cibinong 04',
-    dateLabel: 'Yesterday',
+    dateLabel: 'Kemarin',
     status: 'Verified',
   },
   {
@@ -278,7 +320,7 @@ export const FALLBACK_REGISTRATIONS: RegistrationRecord[] = [
     email: 'agus.logistik@gmail.com',
     role: 'Supir Distribusi',
     institution: 'Armada Sentral 03',
-    dateLabel: '2 days ago',
+    dateLabel: '2 hari lalu',
     status: 'Verified',
   },
   {
@@ -289,7 +331,7 @@ export const FALLBACK_REGISTRATIONS: RegistrationRecord[] = [
     email: 'dian.maharani@bgn.go.id',
     role: 'Ahli Gizi',
     institution: 'SPPG Bekasi Timur 04',
-    dateLabel: '3 days ago',
+    dateLabel: '3 hari lalu',
     status: 'Verified',
   },
   {
@@ -300,7 +342,7 @@ export const FALLBACK_REGISTRATIONS: RegistrationRecord[] = [
     email: 'rizky.sppg@gmail.com',
     role: 'Petugas SPPG',
     institution: 'SPPG Depok Baru 02',
-    dateLabel: '4 days ago',
+    dateLabel: '4 hari lalu',
     status: 'Pending Approval',
   },
 ]
@@ -310,55 +352,55 @@ export const FALLBACK_TRANSACTIONS: TransactionRecord[] = [
     orderId: '#TRX-2025-0891',
     user: 'dr. Farah Nabila, M.Gizi',
     organization: 'Klinik Gizi Sentral',
-    plan: 'Annual Pro',
+    plan: 'Tahunan Pro',
     planIcon: 'crown',
     amount: 'Rp 2.400.000',
-    status: 'Confirmed',
+    status: 'Terkonfirmasi',
   },
   {
     orderId: '#TRX-2025-0890',
     user: 'SPPG Malang Sentral',
     organization: 'Unit Dapur MBG 04',
-    plan: 'Enterprise Kitchen',
+    plan: 'Dapur Enterprise',
     planIcon: 'building',
     amount: 'Rp 12.000.000',
-    status: 'Confirmed',
+    status: 'Terkonfirmasi',
   },
   {
     orderId: '#TRX-2025-0889',
     user: 'Hendra Wijaya, S.Gz',
     organization: 'Ahli Gizi Auditor',
-    plan: 'Monthly Pro',
+    plan: 'Bulanan Pro',
     planIcon: 'spark',
     amount: 'Rp 250.000',
-    status: 'Confirmed',
+    status: 'Terkonfirmasi',
   },
   {
     orderId: '#TRX-2025-0888',
     user: 'Yayasan Pendidikan Taruna',
     organization: 'Pengelola 3 Sekolah',
-    plan: 'Multi-School Plan',
+    plan: 'Paket Multi-Sekolah',
     planIcon: 'school',
     amount: 'Rp 4.500.000',
-    status: 'Confirmed',
+    status: 'Terkonfirmasi',
   },
   {
     orderId: '#TRX-2025-0887',
     user: 'SPPG Bandung Kulon',
     organization: 'Unit Dapur MBG 09',
-    plan: 'Enterprise Kitchen',
+    plan: 'Dapur Enterprise',
     planIcon: 'building',
     amount: 'Rp 12.000.000',
-    status: 'Confirmed',
+    status: 'Terkonfirmasi',
   },
   {
     orderId: '#TRX-2025-0886',
     user: 'Nadia Kusuma, S.Gz',
     organization: 'Auditor Lapangan Jabar',
-    plan: 'Annual Pro',
+    plan: 'Tahunan Pro',
     planIcon: 'crown',
     amount: 'Rp 2.400.000',
-    status: 'Confirmed',
+    status: 'Terkonfirmasi',
   },
 ]
 
@@ -386,6 +428,14 @@ function toneForRole(role: string): RegistrationRecord['avatarTone'] {
   }
 }
 
+export function formatUserStatusLabel(status: UserStatus): string {
+  return status === 'Verified' ? 'Terverifikasi' : 'Menunggu Persetujuan'
+}
+
+export function formatUserRoleLabel(role: UserRole): string {
+  return role === 'admin' ? 'Admin BGN' : role
+}
+
 export function mapProfileToRegistration(profile: UserProfile): RegistrationRecord {
   return {
     id: profile.uid,
@@ -395,7 +445,7 @@ export function mapProfileToRegistration(profile: UserProfile): RegistrationReco
     email: profile.email,
     role: profile.role,
     institution: profile.institution,
-    dateLabel: profile.createdAtLabel || 'Today',
+    dateLabel: profile.createdAtLabel || 'Hari ini',
     status: profile.status,
     isFirestore: true,
   }
@@ -423,7 +473,7 @@ export function subscribeFirestoreUsers(
           email: typeof data.email === 'string' ? data.email : '-',
           role,
           institution: typeof data.institution === 'string' ? data.institution : 'Unit MBG',
-          dateLabel: typeof data.createdAtLabel === 'string' ? data.createdAtLabel : 'Today',
+          dateLabel: typeof data.createdAtLabel === 'string' ? data.createdAtLabel : 'Hari ini',
           status: (data.status as UserStatus) || 'Pending Approval',
           isFirestore: true,
         }
@@ -446,7 +496,7 @@ export function subscribeFirestoreUsers(
             email: typeof data.email === 'string' ? data.email : '-',
             role,
             institution: typeof data.institution === 'string' ? data.institution : 'Unit MBG',
-            dateLabel: typeof data.createdAtLabel === 'string' ? data.createdAtLabel : 'Today',
+            dateLabel: typeof data.createdAtLabel === 'string' ? data.createdAtLabel : 'Hari ini',
             status: (data.status as UserStatus) || 'Pending Approval',
             isFirestore: true,
           }
@@ -490,12 +540,15 @@ export async function seedBaselineTransactionsToFirestore(): Promise<{ ok: boole
         ),
       ),
     )
-    return { ok: true, message: 'Sample transaksi berhasil disinkronkan ke Firestore gizilens-32aa6.' }
+    return {
+      ok: true,
+      message: 'Contoh data transaksi berhasil disinkronkan ke Firestore gizilens-32aa6.',
+    }
   } catch {
     return {
       ok: false,
       message:
-        'Gagal menulis ke koleksi transactions (periksa Firestore Security Rules untuk akses write user login).',
+        'Gagal menulis ke koleksi transactions (periksa aturan Firestore Rules untuk akses tulis admin).',
     }
   }
 }

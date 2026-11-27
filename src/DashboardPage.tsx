@@ -28,6 +28,8 @@ import {
   FALLBACK_TRANSACTIONS,
   KPI_BY_TIMEFRAME,
   REGIONAL_OVERVIEW,
+  formatUserRoleLabel,
+  formatUserStatusLabel,
   getInitials,
   mapProfileToRegistration,
   seedBaselineTransactionsToFirestore,
@@ -44,7 +46,13 @@ type DashboardPageProps = {
   onLogout: () => Promise<void>
 }
 
-const TIMEFRAMES: TimeframeKey[] = ['Today', 'Last 7 Days', 'Last 30 Days', 'This Year', 'Custom']
+const TIMEFRAMES: TimeframeKey[] = [
+  'Hari Ini',
+  '7 Hari Terakhir',
+  '30 Hari Terakhir',
+  'Tahun Ini',
+  'Kustom',
+]
 
 const MAIN_MENU: Array<{
   id: SidebarMenuId
@@ -52,13 +60,13 @@ const MAIN_MENU: Array<{
   badge?: string
   icon: typeof GridIcon
 }> = [
-  { id: 'dashboard', label: 'Dashboard', icon: GridIcon },
-  { id: 'users', label: 'User Management', icon: UsersIcon },
-  { id: 'sppg', label: 'SPPG & School Mgmt', icon: BuildingIcon },
-  { id: 'menu', label: 'Menu Monitoring', badge: 'Active', icon: UtensilsIcon },
-  { id: 'subscriptions', label: 'Subscriptions', icon: SubscriptionIcon },
-  { id: 'transactions', label: 'Transactions', icon: ReceiptIcon },
-  { id: 'reports', label: 'Reports & Analytics', icon: ChartBarIcon },
+  { id: 'dashboard', label: 'Dasbor', icon: GridIcon },
+  { id: 'users', label: 'Manajemen Pengguna', icon: UsersIcon },
+  { id: 'sppg', label: 'SPPG & Sekolah', icon: BuildingIcon },
+  { id: 'menu', label: 'Pemantauan Menu', badge: 'Aktif', icon: UtensilsIcon },
+  { id: 'subscriptions', label: 'Langganan', icon: SubscriptionIcon },
+  { id: 'transactions', label: 'Transaksi', icon: ReceiptIcon },
+  { id: 'reports', label: 'Laporan & Analitik', icon: ChartBarIcon },
 ]
 
 const GOVERNANCE_MENU: Array<{
@@ -66,8 +74,8 @@ const GOVERNANCE_MENU: Array<{
   label: string
   icon: typeof ShieldIcon
 }> = [
-  { id: 'admins', label: 'Admin Management', icon: ShieldIcon },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon },
+  { id: 'admins', label: 'Manajemen Admin', icon: ShieldIcon },
+  { id: 'settings', label: 'Pengaturan', icon: SettingsIcon },
 ]
 
 const ROLE_BADGE_CLASS: Record<string, string> = {
@@ -86,6 +94,14 @@ const AVATAR_TONE_CLASS: Record<RegistrationRecord['avatarTone'], string> = {
   amber: 'bg-[#FFFBEB] text-[#D97706]',
 }
 
+function getIndonesianGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour >= 4 && hour < 11) return 'Selamat Pagi'
+  if (hour >= 11 && hour < 15) return 'Selamat Siang'
+  if (hour >= 15 && hour < 18) return 'Selamat Sore'
+  return 'Selamat Malam'
+}
+
 function PlanIcon({ icon }: { icon: TransactionRecord['planIcon'] }) {
   switch (icon) {
     case 'crown':
@@ -102,7 +118,7 @@ function PlanIcon({ icon }: { icon: TransactionRecord['planIcon'] }) {
 export default function DashboardPage({ user, onBackHome, onLogout }: DashboardPageProps) {
   const [activeMenu, setActiveMenu] = useState<SidebarMenuId>('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [timeframe, setTimeframe] = useState<TimeframeKey>('Last 30 Days')
+  const [timeframe, setTimeframe] = useState<TimeframeKey>('30 Hari Terakhir')
   const [searchQuery, setSearchQuery] = useState('')
   const [regPage, setRegPage] = useState(1)
   const [trxPage, setTrxPage] = useState(1)
@@ -140,9 +156,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
 
   const mergedRegistrations = useMemo(() => {
     const baseList =
-      firestoreUsers.length > 0
-        ? firestoreUsers
-        : [mapProfileToRegistration(user)]
+      firestoreUsers.length > 0 ? firestoreUsers : [mapProfileToRegistration(user)]
 
     const existingEmails = new Set(baseList.map((u) => u.email.toLowerCase()))
     const seededExtras = FALLBACK_REGISTRATIONS.filter(
@@ -184,7 +198,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
 
   const kpi = KPI_BY_TIMEFRAME[timeframe]
   const liveUserOffset = firestoreUsers.length
-  const totalUsersDisplay = (kpi.totalUsers + liveUserOffset).toLocaleString('en-US')
+  const totalUsersDisplay = (kpi.totalUsers + liveUserOffset).toLocaleString('id-ID')
 
   const regTotalPages = Math.max(1, Math.ceil(filteredRegistrations.length / 4))
   const safeRegPage = Math.min(regPage, regTotalPages)
@@ -207,10 +221,11 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
   }
 
   const activeSectionLabel =
-    [...MAIN_MENU, ...GOVERNANCE_MENU].find((m) => m.id === activeMenu)?.label ?? 'Dashboard'
+    [...MAIN_MENU, ...GOVERNANCE_MENU].find((m) => m.id === activeMenu)?.label ?? 'Dasbor'
 
   const userInitials = getInitials(user.name)
   const firstName = user.name.replace(/^(dr\.|drs\.|prof\.)\s*/i, '').split(' ')[0] || 'Admin'
+  const greeting = getIndonesianGreeting()
 
   const sidebarContent = (
     <div className="flex h-full flex-col justify-between bg-white px-4 py-5">
@@ -238,7 +253,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                 </span>
               </span>
               <span className="mt-1 block text-[11px] font-medium text-[#6B7A72]">
-                BGN Nutrition Monitoring
+                Pemantauan Gizi BGN
               </span>
             </span>
           </button>
@@ -255,9 +270,9 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
 
         <div className="mt-7">
           <p className="px-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#98A59E]">
-            MAIN MENU
+            MENU UTAMA
           </p>
-          <nav className="mt-2 space-y-1" aria-label="Main menu">
+          <nav className="mt-2 space-y-1" aria-label="Menu utama">
             {MAIN_MENU.map((item) => {
               const Icon = item.icon
               const active = activeMenu === item.id
@@ -296,9 +311,9 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
 
         <div className="mt-6">
           <p className="px-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#98A59E]">
-            GOVERNANCE
+            TATA KELOLA
           </p>
-          <nav className="mt-2 space-y-1" aria-label="Governance menu">
+          <nav className="mt-2 space-y-1" aria-label="Menu tata kelola">
             {GOVERNANCE_MENU.map((item) => {
               const Icon = item.icon
               const active = activeMenu === item.id
@@ -332,7 +347,9 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[12.5px] font-bold text-[#0F2A1F]">{user.name}</p>
-            <p className="truncate text-[11px] text-[#6B7A72]">{user.role}</p>
+            <p className="truncate text-[11px] text-[#6B7A72]">
+              {formatUserRoleLabel(user.role)}
+            </p>
           </div>
         </div>
       </div>
@@ -365,19 +382,19 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
-                aria-label="Buka navigasi dashboard"
+                aria-label="Buka navigasi dasbor"
                 className="grid h-9 w-9 cursor-pointer place-items-center rounded-xl border border-[#E5EAE7] text-[#0F2A1F] hover:bg-[#F7F9F8] lg:hidden"
               >
                 <Menu width={19} height={19} />
               </button>
               <div>
                 <p className="flex items-center gap-1.5 text-[11px] font-medium text-[#8A9891]">
-                  <span>Home</span>
+                  <span>Beranda</span>
                   <span>›</span>
                   <span className="font-semibold text-[#0F2A1F]">{activeSectionLabel}</span>
                 </p>
                 <h1 className="text-[18px] font-extrabold leading-tight tracking-[-0.025em] text-[#0F2A1F]">
-                  {activeMenu === 'dashboard' ? 'Dashboard Overview' : activeSectionLabel}
+                  {activeMenu === 'dashboard' ? 'Ringkasan Dasbor' : activeSectionLabel}
                 </h1>
               </div>
             </div>
@@ -394,7 +411,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                     setRegPage(1)
                     setTrxPage(1)
                   }}
-                  placeholder="Search SPPG, school, user, or menu..."
+                  placeholder="Cari SPPG, sekolah, pengguna, atau menu..."
                   className="w-full bg-transparent text-[12.5px] text-[#0F2A1F] placeholder:text-[#8A9891] focus:outline-none"
                 />
                 <kbd className="shrink-0 rounded border border-[#DFE5E2] bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#6B7A72]">
@@ -420,7 +437,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
 
                 {notifOpen && (
                   <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-[#E5EAE7] bg-white p-3.5 shadow-xl">
-                    <p className="text-[12px] font-bold text-[#0F2A1F]">BGN Sync Notifications</p>
+                    <p className="text-[12px] font-bold text-[#0F2A1F]">Notifikasi Sinkronisasi BGN</p>
                     <div className="mt-2.5 space-y-2 text-[12px]">
                       <div className="rounded-xl bg-[#F8FAF9] p-2.5">
                         <p className="font-semibold text-[#0F2A1F]">Firebase Auth Terhubung</p>
@@ -433,7 +450,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                           {firestoreUsers.length} akun live di Firestore
                         </p>
                         <p className="mt-0.5 text-[11px] text-[#047857]">
-                          Project gizilens-32aa6 aktif tersinkronisasi.
+                          Proyek gizilens-32aa6 aktif tersinkronisasi.
                         </p>
                       </div>
                     </div>
@@ -443,7 +460,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
 
               <span className="hidden items-center gap-2 rounded-full border border-[#A7F3D0] bg-[#ECFDF5] px-3 py-1.5 text-[11.5px] font-bold text-[#059669] sm:inline-flex">
                 <span className="h-2 w-2 rounded-full bg-[#10B981]" />
-                {firestoreStatus === 'online' ? 'BGN Sync: Online' : 'BGN Sync: Local'}
+                {firestoreStatus === 'online' ? 'Sinkronisasi BGN: Online' : 'Sinkronisasi BGN: Lokal'}
               </span>
 
               <div className="relative">
@@ -462,7 +479,9 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                     <span className="block text-[12.5px] font-bold leading-tight text-[#0F2A1F]">
                       {user.name}
                     </span>
-                    <span className="block text-[10.5px] text-[#6B7A72]">{user.role}</span>
+                    <span className="block text-[10.5px] text-[#6B7A72]">
+                      {formatUserRoleLabel(user.role)}
+                    </span>
                   </span>
                   <ChevronDownIcon className="hidden text-[#8A9891] sm:block" />
                 </button>
@@ -481,7 +500,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                       }}
                       className="mt-1 flex w-full cursor-pointer items-center rounded-xl px-3 py-2 text-left text-[12.5px] font-semibold text-[#0F2A1F] hover:bg-[#F7F9F8]"
                     >
-                      Kembali ke Landing Page
+                      Kembali ke Halaman Utama
                     </button>
                     <button
                       type="button"
@@ -491,7 +510,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                       }}
                       className="flex w-full cursor-pointer items-center rounded-xl px-3 py-2 text-left text-[12.5px] font-semibold text-[#0F2A1F] hover:bg-[#F7F9F8]"
                     >
-                      Firebase Settings
+                      Pengaturan Firebase
                     </button>
                     <button
                       type="button"
@@ -529,11 +548,10 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
               <section className="flex flex-col justify-between gap-4 rounded-2xl border border-[#E5EAE7] bg-white p-5 shadow-[0_1px_2px_rgba(15,42,31,0.03)] sm:p-6 lg:flex-row lg:items-center">
                 <div>
                   <h2 className="text-[22px] font-extrabold tracking-[-0.03em] text-[#0F2A1F] sm:text-[24px]">
-                    Good Morning, {firstName}! 👋
+                    {greeting}, {firstName}! 👋
                   </h2>
                   <p className="mt-1 text-[13.5px] text-[#6B7A72]">
-                    Here&apos;s an overview of GiziLens platform performance across national MBG
-                    operations.
+                    Berikut ringkasan performa platform GiziLens untuk operasional MBG nasional.
                   </p>
                 </div>
 
@@ -551,7 +569,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                             : 'text-[#6B7A72] hover:text-[#0F2A1F]'
                         }`}
                       >
-                        {item === 'Custom' && <CalendarIcon />}
+                        {item === 'Kustom' && <CalendarIcon />}
                         {item}
                       </button>
                     )
@@ -565,7 +583,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
               >
                 <article className="rounded-2xl border border-[#E5EAE7] bg-white p-4 shadow-[0_1px_2px_rgba(15,42,31,0.03)]">
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-medium text-[#6B7A72]">Total Users</span>
+                    <span className="text-[12px] font-medium text-[#6B7A72]">Total Pengguna</span>
                     <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#ECFDF5] text-[#059669]">
                       <UsersIcon width={16} height={16} />
                     </span>
@@ -578,93 +596,93 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                       <TrendUpIcon />
                       {kpi.usersTrend}
                     </span>
-                    <span className="text-[#8A9891]">vs last month</span>
+                    <span className="text-[#8A9891]">{kpi.usersNote}</span>
                   </p>
                 </article>
 
                 <article className="rounded-2xl border border-[#E5EAE7] bg-white p-4 shadow-[0_1px_2px_rgba(15,42,31,0.03)]">
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-medium text-[#6B7A72]">Registered SPPG</span>
+                    <span className="text-[12px] font-medium text-[#6B7A72]">SPPG Terdaftar</span>
                     <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#ECFDF5] text-[#059669]">
                       <BuildingIcon width={16} height={16} />
                     </span>
                   </div>
                   <p className="mt-3 text-[24px] font-extrabold tracking-[-0.03em] text-[#0F2A1F] tabular-nums">
-                    {kpi.registeredSppg.toLocaleString('en-US')}
+                    {kpi.registeredSppg.toLocaleString('id-ID')}
                   </p>
                   <p className="mt-2 flex items-center gap-1.5 text-[11px]">
                     <span className="inline-flex items-center gap-0.5 font-bold text-[#059669]">
                       <TrendUpIcon />
                       {kpi.sppgTrend}
                     </span>
-                    <span className="text-[#8A9891]">active kitchens</span>
+                    <span className="text-[#8A9891]">{kpi.sppgNote}</span>
                   </p>
                 </article>
 
                 <article className="rounded-2xl border border-[#E5EAE7] bg-white p-4 shadow-[0_1px_2px_rgba(15,42,31,0.03)]">
                   <div className="flex items-center justify-between">
                     <span className="text-[12px] font-medium text-[#6B7A72]">
-                      Registered Schools
+                      Sekolah Terdaftar
                     </span>
                     <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#EFF6FF] text-[#2563EB]">
                       <SchoolCapIcon width={16} height={16} />
                     </span>
                   </div>
                   <p className="mt-3 text-[24px] font-extrabold tracking-[-0.03em] text-[#0F2A1F] tabular-nums">
-                    {kpi.registeredSchools.toLocaleString('en-US')}
+                    {kpi.registeredSchools.toLocaleString('id-ID')}
                   </p>
                   <p className="mt-2 flex items-center gap-1.5 text-[11px]">
                     <span className="inline-flex items-center gap-0.5 font-bold text-[#059669]">
                       <TrendUpIcon />
                       {kpi.schoolsTrend}
                     </span>
-                    <span className="text-[#8A9891]">recipient schools</span>
+                    <span className="text-[#8A9891]">{kpi.schoolsNote}</span>
                   </p>
                 </article>
 
                 <article className="rounded-2xl border border-[#E5EAE7] bg-white p-4 shadow-[0_1px_2px_rgba(15,42,31,0.03)]">
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-medium text-[#6B7A72]">
-                      Total Assessments
-                    </span>
+                    <span className="text-[12px] font-medium text-[#6B7A72]">Total Penilaian</span>
                     <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#FFFBEB] text-[#D97706]">
                       <ClipboardCheckIcon width={16} height={16} />
                     </span>
                   </div>
                   <p className="mt-3 text-[24px] font-extrabold tracking-[-0.03em] text-[#0F2A1F] tabular-nums">
-                    {kpi.totalAssessments.toLocaleString('en-US')}
+                    {kpi.totalAssessments.toLocaleString('id-ID')}
                   </p>
                   <p className="mt-2 flex items-center gap-1.5 text-[11px]">
                     <span className="inline-flex items-center gap-0.5 font-bold text-[#059669]">
                       <TrendUpIcon />
                       {kpi.assessmentsTrend}
                     </span>
-                    <span className="text-[#8A9891]">baki verified</span>
+                    <span className="text-[#8A9891]">{kpi.assessmentsNote}</span>
                   </p>
                 </article>
 
                 <article className="rounded-2xl border border-[#E5EAE7] bg-white p-4 shadow-[0_1px_2px_rgba(15,42,31,0.03)]">
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-medium text-[#6B7A72]">Active Premium</span>
+                    <span className="text-[12px] font-medium text-[#6B7A72]">Langganan Aktif</span>
                     <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#ECFDF5] text-[#059669]">
                       <CrownIcon width={16} height={16} />
                     </span>
                   </div>
                   <p className="mt-3 text-[24px] font-extrabold tracking-[-0.03em] text-[#0F2A1F] tabular-nums">
-                    {kpi.activePremium.toLocaleString('en-US')}
+                    {kpi.activePremium.toLocaleString('id-ID')}
                   </p>
                   <p className="mt-2 flex items-center gap-1.5 text-[11px]">
                     <span className="inline-flex items-center gap-0.5 font-bold text-[#059669]">
                       <TrendUpIcon />
                       {kpi.premiumTrend}
                     </span>
-                    <span className="text-[#8A9891]">conversion</span>
+                    <span className="text-[#8A9891]">{kpi.premiumNote}</span>
                   </p>
                 </article>
 
                 <article className="rounded-2xl border border-[#E5EAE7] bg-white p-4 shadow-[0_1px_2px_rgba(15,42,31,0.03)]">
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-medium text-[#6B7A72]">Total Revenue</span>
+                    <span className="text-[12px] font-medium text-[#6B7A72]">
+                      Total Pendapatan
+                    </span>
                     <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#EEF2FF] text-[#4F46E5]">
                       <WalletIcon width={16} height={16} />
                     </span>
@@ -674,7 +692,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                   </p>
                   <p className="mt-2 flex items-center gap-1.5 text-[11px]">
                     <span className="font-bold text-[#059669]">{kpi.revenueTrend}</span>
-                    <span className="text-[#8A9891]">confirmed net</span>
+                    <span className="text-[#8A9891]">{kpi.revenueNote}</span>
                   </p>
                 </article>
               </section>
@@ -693,26 +711,26 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                   <div>
                     <div className="flex items-center gap-2.5">
                       <h3 className="text-[16px] font-bold tracking-[-0.02em] text-[#0F2A1F]">
-                        GiziLens Ecosystem Overview
+                        Ringkasan Ekosistem GiziLens
                       </h3>
                       <span className="rounded-md bg-[#E7F6EE] px-2 py-0.5 text-[11px] font-bold text-[#059669]">
-                        National Scope
+                        Cakupan Nasional
                       </span>
                     </div>
                     <p className="mt-1 text-[12.5px] text-[#6B7A72]">
-                      Breakdown of registered SPPG kitchens, recipient schools, and regional
-                      inspection intensity.
+                      Rincian dapur SPPG terdaftar, sekolah penerima manfaat, dan intensitas
+                      inspeksi per wilayah.
                     </p>
                   </div>
 
                   <div className="flex items-center gap-5 text-[12px] font-medium text-[#526058]">
                     <span className="flex items-center gap-2">
                       <span className="h-2.5 w-2.5 rounded-full bg-[#059669]" />
-                      Assessment Activity
+                      Aktivitas Penilaian
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="h-2.5 w-2.5 rounded-full bg-[#073624]" />
-                      Infrastructure Readiness
+                      Kesiapan Infrastruktur
                     </span>
                   </div>
                 </div>
@@ -735,27 +753,27 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                                 : 'bg-[#EEF2F0] text-[#526058]'
                             }`}
                           >
-                            Rank #{region.rank}
+                            Peringkat #{region.rank}
                           </span>
                         </div>
 
                         <dl className="mt-3 space-y-1.5 text-[12px]">
                           <div className="flex items-center justify-between">
-                            <dt className="text-[#6B7A72]">SPPG Units:</dt>
+                            <dt className="text-[#6B7A72]">Unit SPPG:</dt>
                             <dd className="font-bold text-[#0F2A1F] tabular-nums">
-                              {region.sppgUnits} units
+                              {region.sppgUnits} unit
                             </dd>
                           </div>
                           <div className="flex items-center justify-between">
-                            <dt className="text-[#6B7A72]">Schools:</dt>
+                            <dt className="text-[#6B7A72]">Sekolah:</dt>
                             <dd className="font-bold text-[#0F2A1F] tabular-nums">
-                              {region.schools.toLocaleString('en-US')} schools
+                              {region.schools.toLocaleString('id-ID')} sekolah
                             </dd>
                           </div>
                           <div className="flex items-center justify-between">
-                            <dt className="text-[#6B7A72]">Assessments:</dt>
+                            <dt className="text-[#6B7A72]">Penilaian:</dt>
                             <dd className="font-bold text-[#059669] tabular-nums">
-                              {region.assessments.toLocaleString('en-US')} baki
+                              {region.assessments.toLocaleString('id-ID')} baki
                             </dd>
                           </div>
                         </dl>
@@ -783,10 +801,10 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h3 className="text-[16px] font-bold tracking-[-0.02em] text-[#0F2A1F]">
-                          Recent User Registrations
+                          Pendaftaran Pengguna Terbaru
                         </h3>
                         <p className="mt-0.5 text-[12px] text-[#6B7A72]">
-                          New personnel registered for MBG operations.
+                          Personel baru yang terdaftar untuk operasional MBG.
                         </p>
                       </div>
                       <button
@@ -794,7 +812,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                         onClick={() => setActiveMenu('users')}
                         className="shrink-0 cursor-pointer text-[12px] font-bold text-[#059669] hover:text-[#047857]"
                       >
-                        View All ›
+                        Lihat Semua ›
                       </button>
                     </div>
 
@@ -802,10 +820,10 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                       <table className="w-full min-w-[540px] text-left text-[12.5px]">
                         <thead>
                           <tr className="border-b border-[#EEF2F0] text-[11px] font-semibold text-[#8A9891]">
-                            <th className="py-2.5 pr-3">User Name</th>
-                            <th className="py-2.5 pr-3">Role</th>
-                            <th className="py-2.5 pr-3">Institution</th>
-                            <th className="py-2.5 pr-3">Date</th>
+                            <th className="py-2.5 pr-3">Nama Pengguna</th>
+                            <th className="py-2.5 pr-3">Peran</th>
+                            <th className="py-2.5 pr-3">Institusi</th>
+                            <th className="py-2.5 pr-3">Tanggal</th>
                             <th className="py-2.5 text-right">Status</th>
                           </tr>
                         </thead>
@@ -831,7 +849,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                                     ROLE_BADGE_CLASS[row.role] ?? 'bg-[#F4F7F5] text-[#526058]'
                                   }`}
                                 >
-                                  {row.role}
+                                  {formatUserRoleLabel(row.role)}
                                 </span>
                               </td>
                               <td className="py-3 pr-3 font-medium text-[#526058]">
@@ -861,7 +879,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                                       : 'border border-[#FDE68A] bg-[#FFFBEB] text-[#D97706]'
                                   }`}
                                 >
-                                  {row.status}
+                                  {formatUserStatusLabel(row.status)}
                                 </button>
                               </td>
                             </tr>
@@ -873,7 +891,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
 
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEF2F0] pt-4 text-[11.5px] text-[#8A9891]">
                     <span>
-                      Showing {visibleRegistrations.length} of {totalUsersDisplay} accounts
+                      Menampilkan {visibleRegistrations.length} dari {totalUsersDisplay} akun
                     </span>
                     <div className="flex items-center gap-1.5">
                       <button
@@ -882,7 +900,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                         onClick={() => setRegPage((p) => Math.max(1, p - 1))}
                         className="cursor-pointer rounded-lg border border-[#E5EAE7] px-2.5 py-1 font-semibold text-[#526058] disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        Previous
+                        Sebelumnya
                       </button>
                       {Array.from({ length: regTotalPages }, (_, i) => i + 1).map((page) => (
                         <button
@@ -904,7 +922,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                         onClick={() => setRegPage((p) => Math.min(regTotalPages, p + 1))}
                         className="cursor-pointer rounded-lg border border-[#E5EAE7] px-2.5 py-1 font-semibold text-[#526058] disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        Next
+                        Berikutnya
                       </button>
                     </div>
                   </div>
@@ -915,10 +933,10 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h3 className="text-[16px] font-bold tracking-[-0.02em] text-[#0F2A1F]">
-                          Recent Subscription Transactions
+                          Transaksi Langganan Terbaru
                         </h3>
                         <p className="mt-0.5 text-[12px] text-[#6B7A72]">
-                          Confirmed successful payments for Premium MBG auditing.
+                          Pembayaran berhasil yang terkonfirmasi untuk audit MBG Premium.
                         </p>
                       </div>
                       <button
@@ -926,7 +944,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                         onClick={() => setActiveMenu('transactions')}
                         className="shrink-0 cursor-pointer text-[12px] font-bold text-[#059669] hover:text-[#047857]"
                       >
-                        View All ›
+                        Lihat Semua ›
                       </button>
                     </div>
 
@@ -934,10 +952,10 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                       <table className="w-full min-w-[540px] text-left text-[12.5px]">
                         <thead>
                           <tr className="border-b border-[#EEF2F0] text-[11px] font-semibold text-[#8A9891]">
-                            <th className="py-2.5 pr-3">Order ID</th>
-                            <th className="py-2.5 pr-3">User</th>
-                            <th className="py-2.5 pr-3">Plan</th>
-                            <th className="py-2.5 pr-3">Amount</th>
+                            <th className="py-2.5 pr-3">ID Pesanan</th>
+                            <th className="py-2.5 pr-3">Pengguna</th>
+                            <th className="py-2.5 pr-3">Paket</th>
+                            <th className="py-2.5 pr-3">Nominal</th>
                             <th className="py-2.5 text-right">Status</th>
                           </tr>
                         </thead>
@@ -973,7 +991,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                   </div>
 
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEF2F0] pt-4 text-[11.5px] text-[#8A9891]">
-                    <span>Showing {visibleTransactions.length} confirmed settlements</span>
+                    <span>Menampilkan {visibleTransactions.length} pembayaran terkonfirmasi</span>
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
@@ -981,7 +999,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                         onClick={() => setTrxPage((p) => Math.max(1, p - 1))}
                         className="cursor-pointer rounded-lg border border-[#E5EAE7] px-2.5 py-1 font-semibold text-[#526058] disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        Previous
+                        Sebelumnya
                       </button>
                       {Array.from({ length: trxTotalPages }, (_, i) => i + 1).map((page) => (
                         <button
@@ -1003,7 +1021,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                         onClick={() => setTrxPage((p) => Math.min(trxTotalPages, p + 1))}
                         className="cursor-pointer rounded-lg border border-[#E5EAE7] px-2.5 py-1 font-semibold text-[#526058] disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        Next
+                        Berikutnya
                       </button>
                     </div>
                   </div>
@@ -1014,8 +1032,8 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
 
           <footer className="flex flex-col gap-3 border-t border-[#E5EAE7] pt-5 text-[11.5px] text-[#8A9891] sm:flex-row sm:items-center sm:justify-between">
             <p>
-              <strong className="font-bold text-[#0F2A1F]">GiziLens Admin Portal</strong> •
-              Integrated with Badan Gizi Nasional (BGN) &amp; Kemenkes RI
+              <strong className="font-bold text-[#0F2A1F]">Portal Admin GiziLens</strong> •
+              Terintegrasi dengan Badan Gizi Nasional (BGN) &amp; Kemenkes RI
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <button
@@ -1023,11 +1041,11 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
                 onClick={onBackHome}
                 className="cursor-pointer hover:text-[#0F2A1F]"
               >
-                Landing Page
+                Halaman Utama
               </button>
-              <span>Privacy Policy</span>
-              <span>MBG Standard SOP</span>
-              <span>Audit API Logs</span>
+              <span>Kebijakan Privasi</span>
+              <span>SOP Standar MBG</span>
+              <span>Log API Audit</span>
               <span className="font-mono text-[11px]">v2.4.0-admin</span>
             </div>
           </footer>

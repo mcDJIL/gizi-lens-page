@@ -17,7 +17,7 @@ function buildSmoothPath(coords: Array<{ x: number; y: number }>): string {
 }
 
 export function PlatformActivityCard({ onViewReport }: { onViewReport: () => void }) {
-  const [granularity, setGranularity] = useState<ActivityGranularity>('Weekly')
+  const [granularity, setGranularity] = useState<ActivityGranularity>('Mingguan')
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   const dataset = ACTIVITY_BY_GRANULARITY[granularity]
@@ -44,10 +44,10 @@ export function PlatformActivityCard({ onViewReport }: { onViewReport: () => voi
   const activePoint = points[activeIdx]
 
   const yTicks = [
-    { label: '90k', value: 90000 },
-    { label: '60k', value: 60000 },
-    { label: '30k', value: 30000 },
-    { label: '0k', value: 0 },
+    { label: '90rb', value: 90000 },
+    { label: '60rb', value: 60000 },
+    { label: '30rb', value: 30000 },
+    { label: '0', value: 0 },
   ]
 
   return (
@@ -57,19 +57,19 @@ export function PlatformActivityCard({ onViewReport }: { onViewReport: () => voi
           <div>
             <div className="flex items-center gap-2.5">
               <h3 className="text-[16px] font-bold tracking-[-0.02em] text-[#0F2A1F]">
-                Platform Activity
+                Aktivitas Platform
               </h3>
               <span className="rounded-md bg-[#E7F6EE] px-2 py-0.5 text-[11px] font-bold text-[#059669]">
                 Baki MBG
               </span>
             </div>
             <p className="mt-1 text-[12.5px] text-[#6B7A72]">
-              Aggregated national nutrition assessments completed across all registered SPPGs.
+              Rekapitulasi penilaian gizi nasional yang diselesaikan di seluruh unit SPPG terdaftar.
             </p>
           </div>
 
           <div className="inline-flex rounded-xl border border-[#E5EAE7] bg-[#F7F9F8] p-1">
-            {(['Daily', 'Weekly', 'Monthly'] as const).map((tab) => {
+            {(['Harian', 'Mingguan', 'Bulanan'] as const).map((tab) => {
               const active = granularity === tab
               return (
                 <button
@@ -109,11 +109,11 @@ export function PlatformActivityCard({ onViewReport }: { onViewReport: () => voi
           <div className="flex items-center gap-5 text-[12px] font-medium text-[#526058]">
             <span className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-[#059669]" />
-              Evaluated Menus
+              Menu Dievaluasi
             </span>
             <span className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-[#CBD5E1]" />
-              Previous Average
+              Rata-rata Sebelumnya
             </span>
           </div>
         </div>
@@ -123,7 +123,7 @@ export function PlatformActivityCard({ onViewReport }: { onViewReport: () => voi
             viewBox={`0 0 ${width} ${height}`}
             className="h-auto w-full select-none overflow-visible"
             role="img"
-            aria-label="Platform activity nutrition assessments line chart"
+            aria-label="Grafik aktivitas penilaian gizi platform"
           >
             <defs>
               <linearGradient id="activityAreaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -197,11 +197,11 @@ export function PlatformActivityCard({ onViewReport }: { onViewReport: () => voi
 
             {activePoint && (
               <g
-                transform={`translate(${Math.min(Math.max(activePoint.x - 42, padLeft), width - 110)}, ${Math.max(activePoint.y - 34, 4)})`}
+                transform={`translate(${Math.min(Math.max(activePoint.x - 44, padLeft), width - 112)}, ${Math.max(activePoint.y - 34, 4)})`}
               >
-                <rect width="88" height="24" rx="6" fill="#073624" />
+                <rect width="90" height="24" rx="6" fill="#073624" />
                 <text
-                  x="44"
+                  x="45"
                   y="15.5"
                   textAnchor="middle"
                   fontSize="10.5"
@@ -210,7 +210,7 @@ export function PlatformActivityCard({ onViewReport }: { onViewReport: () => voi
                 >
                   {hoveredIndex === null
                     ? dataset.highlightLabel
-                    : `${activePoint.evaluated.toLocaleString('en-US')}`}
+                    : `${activePoint.evaluated.toLocaleString('id-ID')} baki`}
                 </text>
               </g>
             )}
@@ -222,8 +222,8 @@ export function PlatformActivityCard({ onViewReport }: { onViewReport: () => voi
         <p className="flex items-start gap-2 text-[#526058]">
           <InfoCircleIcon className="mt-0.5 shrink-0 text-[#8A9891]" />
           <span>
-            Data aggregated at batch and school menu levels. Individual ompreng scans are
-            consolidated into 1,240 verified meal menus.
+            Data diagregasi di tingkat batch dan menu sekolah. Pemindaian ompreng individu
+            dikonsolidasikan menjadi 1.240 menu makan terverifikasi.
           </span>
         </p>
         <button
@@ -231,7 +231,7 @@ export function PlatformActivityCard({ onViewReport }: { onViewReport: () => voi
           onClick={onViewReport}
           className="shrink-0 cursor-pointer text-left font-bold text-[#059669] transition hover:text-[#047857]"
         >
-          View Detailed Report →
+          Lihat Laporan Lengkap →
         </button>
       </div>
     </section>
@@ -240,24 +240,24 @@ export function PlatformActivityCard({ onViewReport }: { onViewReport: () => voi
 
 const COMPLIANCE_SEGMENTS = [
   {
-    label: 'Meets Target (AKG)',
-    subtitle: 'Calorie & Macro compliant',
+    label: 'Sesuai Target (AKG)',
+    subtitle: 'Kalori & makro terpenuhi',
     pct: 72,
-    count: '229,284 baki',
+    count: '229.284 baki',
     color: '#10B981',
   },
   {
-    label: 'Needs Nutritionist Review',
-    subtitle: 'Minor portion variance',
+    label: 'Perlu Tinjauan Ahli Gizi',
+    subtitle: 'Selisih porsi minor',
     pct: 18,
-    count: '57,321 baki',
+    count: '57.321 baki',
     color: '#F59E0B',
   },
   {
-    label: 'Below Standard',
-    subtitle: 'Requires reformulation',
+    label: 'Di Bawah Standar',
+    subtitle: 'Perlu reformulasi menu',
     pct: 10,
-    count: '31,845 baki',
+    count: '31.845 baki',
     color: '#EF4444',
   },
 ]
@@ -281,13 +281,13 @@ export function NutritionalComplianceCard() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="text-[16px] font-bold tracking-[-0.02em] text-[#0F2A1F]">
-              Nutritional Compliance
+              Kepatuhan Gizi
             </h3>
-            <p className="mt-0.5 text-[12px] text-[#6B7A72]">AKG Standard Target Distribution</p>
+            <p className="mt-0.5 text-[12px] text-[#6B7A72]">Distribusi Target Standar AKG</p>
           </div>
           <button
             type="button"
-            aria-label="Compliance options"
+            aria-label="Opsi kepatuhan gizi"
             className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg text-[#8A9891] transition hover:bg-[#F4F7F5] hover:text-[#0F2A1F]"
           >
             <DotsVerticalIcon />
@@ -326,9 +326,9 @@ export function NutritionalComplianceCard() {
 
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
               <span className="text-[22px] font-extrabold tracking-[-0.03em] text-[#0F2A1F]">
-                318.4k
+                318,4 rb
               </span>
-              <span className="text-[11px] font-medium text-[#6B7A72]">Assessments</span>
+              <span className="text-[11px] font-medium text-[#6B7A72]">Penilaian</span>
             </div>
           </div>
         </div>
@@ -359,7 +359,7 @@ export function NutritionalComplianceCard() {
       </div>
 
       <p className="mt-4 text-center text-[11px] text-[#8A9891]">
-        Evaluated according to Permenkes &amp; BGN Standards
+        Dievaluasi berdasarkan Standar Permenkes &amp; BGN
       </p>
     </section>
   )

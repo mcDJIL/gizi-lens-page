@@ -60,7 +60,7 @@ export async function fetchUserProfile(user: User): Promise<UserProfile | null> 
           ? data.institution
           : 'Badan Gizi Nasional (BGN)',
       status: (data.status as UserStatus) || 'Verified',
-      createdAtLabel: typeof data.createdAtLabel === 'string' ? data.createdAtLabel : 'Today',
+      createdAtLabel: typeof data.createdAtLabel === 'string' ? data.createdAtLabel : 'Hari ini',
       createdAtMs: typeof data.createdAtMs === 'number' ? data.createdAtMs : undefined,
     }
   } catch {

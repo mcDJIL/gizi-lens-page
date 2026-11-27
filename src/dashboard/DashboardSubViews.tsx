@@ -1,6 +1,8 @@
 import {
   FALLBACK_TRANSACTIONS,
   REGIONAL_OVERVIEW,
+  formatUserRoleLabel,
+  formatUserStatusLabel,
   type RegistrationRecord,
 } from '../lib/dashboardData'
 import type { UserStatus } from '../lib/auth'
@@ -43,7 +45,12 @@ export function DashboardSubView({
 
   if (section === 'users' || section === 'admins') {
     const list = registrations.filter((item) => {
-      if (section === 'admins' && item.role !== 'BGN National Admin' && item.role !== 'Ahli Gizi') {
+      if (
+        section === 'admins' &&
+        item.role !== 'BGN National Admin' &&
+        item.role !== 'admin' &&
+        item.role !== 'Ahli Gizi'
+      ) {
         return false
       }
       if (!q) return true
@@ -60,10 +67,13 @@ export function DashboardSubView({
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#EEF2F0] pb-4">
           <div>
             <h2 className="text-[18px] font-extrabold text-[#0F2A1F]">
-              {section === 'admins' ? 'Admin & Verifikator Governance' : 'User Management (Live Firestore)'}
+              {section === 'admins'
+                ? 'Tata Kelola Admin & Verifikator'
+                : 'Manajemen Pengguna (Live Firestore)'}
             </h2>
             <p className="mt-1 text-[12.5px] text-[#6B7A72]">
-              Kelola personel MBG terdaftar. Klik status pada akun Firestore untuk verifikasi langsung.
+              Kelola personel MBG terdaftar. Klik status pada akun Firestore untuk memperbarui
+              verifikasi langsung.
             </p>
           </div>
           <button
@@ -71,7 +81,7 @@ export function DashboardSubView({
             onClick={onBackOverview}
             className="cursor-pointer rounded-xl border border-[#E5EAE7] bg-[#F8FAF9] px-3.5 py-2 text-[12.5px] font-bold text-[#0F2A1F] transition hover:bg-[#EEF2F0]"
           >
-            ← Kembali ke Overview
+            ← Kembali ke Ringkasan
           </button>
         </div>
 
@@ -79,11 +89,11 @@ export function DashboardSubView({
           <table className="w-full min-w-[680px] text-left text-[13px]">
             <thead>
               <tr className="border-b border-[#EEF2F0] text-[11px] font-bold uppercase tracking-[0.04em] text-[#8A9891]">
-                <th className="py-3 pr-4">User Name</th>
-                <th className="py-3 pr-4">Role</th>
-                <th className="py-3 pr-4">Institution</th>
-                <th className="py-3 pr-4">Registered</th>
-                <th className="py-3 text-right">Status / Action</th>
+                <th className="py-3 pr-4">Nama Pengguna</th>
+                <th className="py-3 pr-4">Peran</th>
+                <th className="py-3 pr-4">Institusi</th>
+                <th className="py-3 pr-4">Terdaftar</th>
+                <th className="py-3 text-right">Status / Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EEF2F0]">
@@ -107,7 +117,9 @@ export function DashboardSubView({
                       </div>
                     </div>
                   </td>
-                  <td className="py-3.5 pr-4 font-semibold text-[#334155]">{row.role}</td>
+                  <td className="py-3.5 pr-4 font-semibold text-[#334155]">
+                    {formatUserRoleLabel(row.role)}
+                  </td>
                   <td className="py-3.5 pr-4 text-[#526058]">{row.institution}</td>
                   <td className="py-3.5 pr-4 text-[#6B7A72]">{row.dateLabel}</td>
                   <td className="py-3.5 text-right">
@@ -120,7 +132,7 @@ export function DashboardSubView({
                           : 'bg-[#FFFBEB] text-[#D97706] hover:bg-[#FEF3C7]'
                       }`}
                     >
-                      {row.status}
+                      {formatUserStatusLabel(row.status)}
                     </button>
                   </td>
                 </tr>
@@ -143,13 +155,14 @@ export function DashboardSubView({
           <div>
             <h2 className="text-[18px] font-extrabold text-[#0F2A1F]">
               {section === 'sppg'
-                ? 'SPPG & School Management'
+                ? 'Manajemen SPPG & Sekolah'
                 : section === 'menu'
-                  ? 'Menu Monitoring · Active Feed'
-                  : 'National AKG Reports & Analytics'}
+                  ? 'Pemantauan Menu · Aktif'
+                  : 'Laporan & Analitik AKG Nasional'}
             </h2>
             <p className="mt-1 text-[12.5px] text-[#6B7A72]">
-              Cakupan operasional dapur SPPG, sekolah penerima, dan kepatuhan lima pilar gizi MBG.
+              Cakupan operasional dapur SPPG, sekolah penerima manfaat, dan kepatuhan lima pilar
+              gizi MBG.
             </p>
           </div>
           <button
@@ -157,7 +170,7 @@ export function DashboardSubView({
             onClick={onBackOverview}
             className="cursor-pointer rounded-xl border border-[#E5EAE7] bg-[#F8FAF9] px-3.5 py-2 text-[12.5px] font-bold text-[#0F2A1F] transition hover:bg-[#EEF2F0]"
           >
-            ← Kembali ke Overview
+            ← Kembali ke Ringkasan
           </button>
         </div>
 
@@ -169,22 +182,24 @@ export function DashboardSubView({
                   {item.rank}. {item.province}
                 </p>
                 <span className="rounded-md bg-[#E7F6EE] px-2 py-0.5 text-[11px] font-bold text-[#059669]">
-                  Rank #{item.rank}
+                  Peringkat #{item.rank}
                 </span>
               </div>
               <dl className="mt-3 space-y-1.5 text-[12.5px]">
                 <div className="flex justify-between">
-                  <dt className="text-[#6B7A72]">SPPG Units</dt>
-                  <dd className="font-bold text-[#0F2A1F]">{item.sppgUnits} units</dd>
+                  <dt className="text-[#6B7A72]">Unit SPPG</dt>
+                  <dd className="font-bold text-[#0F2A1F]">{item.sppgUnits} unit</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-[#6B7A72]">Schools</dt>
-                  <dd className="font-bold text-[#0F2A1F]">{item.schools.toLocaleString('en-US')}</dd>
+                  <dt className="text-[#6B7A72]">Sekolah</dt>
+                  <dd className="font-bold text-[#0F2A1F]">
+                    {item.schools.toLocaleString('id-ID')} sekolah
+                  </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-[#6B7A72]">Assessments</dt>
+                  <dt className="text-[#6B7A72]">Penilaian</dt>
                   <dd className="font-bold text-[#059669]">
-                    {item.assessments.toLocaleString('en-US')} baki
+                    {item.assessments.toLocaleString('id-ID')} baki
                   </dd>
                 </div>
               </dl>
@@ -218,10 +233,10 @@ export function DashboardSubView({
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#EEF2F0] pb-4">
           <div>
             <h2 className="text-[18px] font-extrabold text-[#0F2A1F]">
-              {section === 'subscriptions' ? 'Active MBG Subscriptions' : 'Subscription Transactions'}
+              {section === 'subscriptions' ? 'Langganan Aktif MBG' : 'Riwayat Transaksi Langganan'}
             </h2>
             <p className="mt-1 text-[12.5px] text-[#6B7A72]">
-              Daftar paket berlangganan dan settlement pembayaran unit SPPG &amp; sekolah.
+              Daftar paket berlangganan dan penyelesaian pembayaran unit SPPG &amp; sekolah.
             </p>
           </div>
           <button
@@ -229,7 +244,7 @@ export function DashboardSubView({
             onClick={onBackOverview}
             className="cursor-pointer rounded-xl border border-[#E5EAE7] bg-[#F8FAF9] px-3.5 py-2 text-[12.5px] font-bold text-[#0F2A1F] transition hover:bg-[#EEF2F0]"
           >
-            ← Kembali ke Overview
+            ← Kembali ke Ringkasan
           </button>
         </div>
 
@@ -237,10 +252,10 @@ export function DashboardSubView({
           <table className="w-full min-w-[640px] text-left text-[13px]">
             <thead>
               <tr className="border-b border-[#EEF2F0] text-[11px] font-bold uppercase tracking-[0.04em] text-[#8A9891]">
-                <th className="py-3 pr-4">Order ID</th>
-                <th className="py-3 pr-4">Customer</th>
-                <th className="py-3 pr-4">Plan</th>
-                <th className="py-3 pr-4">Amount</th>
+                <th className="py-3 pr-4">ID Pesanan</th>
+                <th className="py-3 pr-4">Pelanggan</th>
+                <th className="py-3 pr-4">Paket</th>
+                <th className="py-3 pr-4">Nominal</th>
                 <th className="py-3 text-right">Status</th>
               </tr>
             </thead>
@@ -274,7 +289,9 @@ export function DashboardSubView({
     <section className="rounded-2xl border border-[#E5EAE7] bg-white p-6 shadow-[0_1px_2px_rgba(15,42,31,0.03)]">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#EEF2F0] pb-4">
         <div>
-          <h2 className="text-[18px] font-extrabold text-[#0F2A1F]">Firebase &amp; Portal Settings</h2>
+          <h2 className="text-[18px] font-extrabold text-[#0F2A1F]">
+            Pengaturan Firebase &amp; Portal
+          </h2>
           <p className="mt-1 text-[12.5px] text-[#6B7A72]">
             Integrasi aktif ke proyek Firebase <span className="font-bold">gizilens-32aa6</span>.
           </p>
@@ -284,7 +301,7 @@ export function DashboardSubView({
           onClick={onBackOverview}
           className="cursor-pointer rounded-xl border border-[#E5EAE7] bg-[#F8FAF9] px-3.5 py-2 text-[12.5px] font-bold text-[#0F2A1F] transition hover:bg-[#EEF2F0]"
         >
-          ← Kembali ke Overview
+          ← Kembali ke Ringkasan
         </button>
       </div>
 
@@ -294,16 +311,16 @@ export function DashboardSubView({
             Status Koneksi Firestore
           </p>
           <p className="mt-2 text-[16px] font-extrabold text-[#0F2A1F]">
-            {firestoreStatus === 'online' ? 'Connected · Real-time Snapshot' : 'Fallback Mode'}
+            {firestoreStatus === 'online' ? 'Terhubung · Sinkronisasi Real-time' : 'Mode Lokal'}
           </p>
           <p className="mt-1 text-[12.5px] text-[#6B7A72]">
-            Project ID: <span className="font-mono font-semibold text-[#0F2A1F]">gizilens-32aa6</span>
+            ID Proyek: <span className="font-mono font-semibold text-[#0F2A1F]">gizilens-32aa6</span>
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E5EAE7] bg-[#F8FAF9] p-4">
           <p className="text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#6B7A72]">
-            Sinkronisasi Data Demo
+            Sinkronisasi Data Contoh
           </p>
           <p className="mt-1 text-[12.5px] text-[#6B7A72]">
             Simpan contoh transaksi awal ke koleksi <span className="font-mono">transactions</span> di
@@ -315,7 +332,7 @@ export function DashboardSubView({
             onClick={onSeedFirestore}
             className="mt-3 cursor-pointer rounded-xl bg-[#073624] px-4 py-2 text-[12.5px] font-bold text-white transition hover:bg-[#05291B] disabled:opacity-60"
           >
-            {seeding ? 'Menyinkronkan...' : 'Seed Sample Data ke Firestore'}
+            {seeding ? 'Menyinkronkan...' : 'Simpan Data Contoh ke Firestore'}
           </button>
           {seedNotice && <p className="mt-2 text-[12px] font-medium text-[#059669]">{seedNotice}</p>}
         </div>
