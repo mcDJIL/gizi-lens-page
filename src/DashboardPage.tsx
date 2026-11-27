@@ -24,14 +24,12 @@ import {
 import { DashboardSubView, type SidebarMenuId } from './dashboard/DashboardSubViews'
 import type { UserProfile, UserStatus } from './lib/auth'
 import {
-  FALLBACK_REGISTRATIONS,
   FALLBACK_TRANSACTIONS,
   KPI_BY_TIMEFRAME,
   REGIONAL_OVERVIEW,
   formatUserRoleLabel,
   formatUserStatusLabel,
   getInitials,
-  mapProfileToRegistration,
   type RegistrationRecord,
   type TimeframeKey,
   type TransactionRecord,
@@ -242,16 +240,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  const mergedRegistrations = useMemo(() => {
-    const baseList =
-      apiUsers.length > 0 ? apiUsers : [mapProfileToRegistration(user)]
-
-    const existingEmails = new Set(baseList.map((u) => u.email.toLowerCase()))
-    const seededExtras = FALLBACK_REGISTRATIONS.filter(
-      (item) => !existingEmails.has(item.email.toLowerCase()),
-    )
-    return [...baseList, ...seededExtras]
-  }, [apiUsers, user])
+  const mergedRegistrations = apiUsers
 
   const filteredRegistrations = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -287,8 +276,7 @@ export default function DashboardPage({ user, onBackHome, onLogout }: DashboardP
   }, [apiRegions, searchQuery])
 
   const kpi = apiKpi ?? KPI_BY_TIMEFRAME[timeframe]
-  const liveUserOffset = apiUsers.length
-  const totalUsersDisplay = (kpi.totalUsers + liveUserOffset).toLocaleString('id-ID')
+  const totalUsersDisplay = kpi.totalUsers.toLocaleString('id-ID')
 
   const regTotalPages = Math.max(1, Math.ceil(filteredRegistrations.length / 4))
   const safeRegPage = Math.min(regPage, regTotalPages)
