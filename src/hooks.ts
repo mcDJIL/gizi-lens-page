@@ -69,3 +69,28 @@ export function useScrolled(offset = 24) {
 
   return scrolled
 }
+
+let scrollLockCount = 0
+
+/** Locks body and root scrolling while any overlay/modal using this hook is open. */
+export function useScrollLock(locked: boolean) {
+  useEffect(() => {
+    if (!locked) return
+    scrollLockCount += 1
+    if (scrollLockCount === 1) {
+      document.documentElement.style.overflow = 'hidden'
+      document.documentElement.style.overscrollBehavior = 'none'
+      document.body.style.overflow = 'hidden'
+      document.body.style.overscrollBehavior = 'none'
+    }
+    return () => {
+      scrollLockCount = Math.max(0, scrollLockCount - 1)
+      if (scrollLockCount === 0) {
+        document.documentElement.style.overflow = ''
+        document.documentElement.style.overscrollBehavior = ''
+        document.body.style.overflow = ''
+        document.body.style.overscrollBehavior = ''
+      }
+    }
+  }, [locked])
+}

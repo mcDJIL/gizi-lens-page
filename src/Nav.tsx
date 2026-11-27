@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowRight, Button, Close, Logo, Menu } from './components'
-import { useScrolled } from './hooks'
+import { useScrollLock, useScrolled } from './hooks'
 
 const LINKS = [
   { href: '#masalah', label: 'Masalah' },
@@ -10,16 +10,16 @@ const LINKS = [
   { href: '#booth', label: 'Booth' },
 ]
 
-export default function Nav() {
+type NavProps = {
+  demoOpen: boolean
+  onOpenDemo: () => void
+}
+
+export default function Nav({ demoOpen, onOpenDemo }: NavProps) {
   const scrolled = useScrolled(20)
   const [open, setOpen] = useState(false)
 
-  useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [open])
+  useScrollLock(open)
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -61,7 +61,13 @@ export default function Nav() {
 
           <div className="flex items-center gap-2">
             <div className="hidden sm:block">
-              <Button href="#cara-kerja" size="sm" arrow>
+              <Button
+                size="sm"
+                arrow
+                aria-haspopup="dialog"
+                aria-expanded={demoOpen}
+                onClick={onOpenDemo}
+              >
                 Coba demo
               </Button>
             </div>
@@ -106,7 +112,16 @@ export default function Nav() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">
             Portal audit gizi MBG
           </p>
-          <Button href="#cara-kerja" arrow className="w-full" onClick={() => setOpen(false)}>
+          <Button
+            arrow
+            className="w-full"
+            aria-haspopup="dialog"
+            aria-expanded={demoOpen}
+            onClick={() => {
+              setOpen(false)
+              onOpenDemo()
+            }}
+          >
             Coba demo
           </Button>
         </div>

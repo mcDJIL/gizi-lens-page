@@ -110,6 +110,27 @@ export function Leaf(props: IconProps) {
   )
 }
 
+export function Download(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" {...stroke} {...props}>
+      <path d="M12 4v11" />
+      <path d="m7.5 11.5 4.5 4.5 4.5-4.5" />
+      <path d="M4.5 19.5h15" />
+    </svg>
+  )
+}
+
+export function Gamepad(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" {...stroke} {...props}>
+      <rect x="3" y="6.5" width="18" height="11" rx="5.5" />
+      <path d="M8 10v4M6 12h4" />
+      <circle cx="15.5" cy="10.8" r=".8" fill="currentColor" stroke="none" />
+      <circle cx="17.5" cy="13.2" r=".8" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 export function Logo({ className = '' }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
@@ -161,13 +182,18 @@ export function Eyebrow({
 }
 
 type ButtonProps = {
-  href: string
+  href?: string
   children: ReactNode
   variant?: 'primary' | 'ghost' | 'gold' | 'ghost-light'
   size?: 'md' | 'sm'
   arrow?: boolean
+  target?: string
+  rel?: string
+  type?: 'button' | 'submit' | 'reset'
   className?: string
   onClick?: () => void
+  'aria-haspopup'?: 'dialog' | 'menu' | 'listbox' | 'tree' | 'grid' | boolean
+  'aria-expanded'?: boolean
 }
 
 export function Button({
@@ -176,8 +202,13 @@ export function Button({
   variant = 'primary',
   size = 'md',
   arrow = false,
+  target,
+  rel,
+  type = 'button',
   className = '',
   onClick,
+  'aria-haspopup': ariaHasPopup,
+  'aria-expanded': ariaExpanded,
 }: ButtonProps) {
   const variants = {
     primary:
@@ -193,20 +224,44 @@ export function Button({
   }
 
   const iconTone = variant === 'gold' ? 'bg-forest-900 text-gold' : 'bg-gold text-forest-900'
+  const sharedClassName = `group inline-flex cursor-pointer items-center justify-center gap-3 rounded-full font-bold transition-all duration-300 ${variants[variant]} ${sizes[size]} ${className}`
 
-  return (
-    <a
-      href={href}
-      onClick={onClick}
-      className={`group inline-flex items-center justify-center gap-3 rounded-full font-bold transition-all duration-300 ${variants[variant]} ${sizes[size]} ${className}`}
-    >
+  const content = (
+    <>
       {children}
       {arrow && (
-        <span className={`grid h-7 w-7 place-items-center rounded-full transition-transform duration-300 group-hover:translate-x-0.5 ${iconTone}`}>
+        <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full transition-transform duration-300 group-hover:translate-x-0.5 ${iconTone}`}>
           <ArrowRight />
         </span>
       )}
-    </a>
+    </>
+  )
+
+  if (href !== undefined) {
+    const resolvedRel = target === '_blank' ? (rel ?? 'noopener noreferrer') : rel
+    return (
+      <a
+        href={href}
+        target={target}
+        rel={resolvedRel}
+        onClick={onClick}
+        className={sharedClassName}
+      >
+        {content}
+      </a>
+    )
+  }
+
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      aria-haspopup={ariaHasPopup}
+      aria-expanded={ariaExpanded}
+      className={sharedClassName}
+    >
+      {content}
+    </button>
   )
 }
 

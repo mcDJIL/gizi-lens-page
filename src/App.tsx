@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import DemoDialog from './DemoDialog'
 import Nav from './Nav'
 import { useReveal, useScrollProgress } from './hooks'
 import Hero from './sections/Hero'
@@ -10,6 +12,8 @@ import Booth from './sections/Booth'
 import Footer from './sections/Footer'
 
 export default function App() {
+  const [demoOpen, setDemoOpen] = useState(false)
+
   useReveal()
   useScrollProgress()
 
@@ -28,7 +32,7 @@ export default function App() {
         style={{ transform: 'scaleX(var(--scroll, 0))' }}
       />
 
-      <Nav />
+      <Nav demoOpen={demoOpen} onOpenDemo={() => setDemoOpen(true)} />
 
       <main id="main">
         <Hero />
@@ -41,6 +45,8 @@ export default function App() {
       </main>
 
       <Footer />
+
+      <DemoDialog open={demoOpen} onClose={() => setDemoOpen(false)} />
     </>
   )
 }
