@@ -1,6 +1,6 @@
 import { signInWithEmailAndPassword, signOut, type User } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
-import { auth, db } from './firebase'
+import { auth } from './firebase'
+import { fetchUser, fetchUsers, type ApiUser } from './api'
 
 export type UserRole =
   | 'admin'
@@ -33,38 +33,68 @@ export function isAdminRole(data: Record<string, unknown>): boolean {
   return false
 }
 
+function mapApiUser(profile: ApiUser): UserProfile {
+  return {
+    uid: profile.uid,
+    name: profile.name || profile.fullName,
+    email: profile.email,
+    role: profile.role as UserRole,
+    institution: profile.institution,
+    status: profile.status,
+    createdAtLabel: profile.createdAtLabel,
+    createdAtMs: profile.createdAtMs,
+  }
+}
+
+function allowedAdminEmails(): string[] {
+  return (((import.meta.env.VITE_ADMIN_EMAILS as string | undefined) ?? '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean))
+}
+
+function isAllowlistedAdmin(email: string | null | undefined): boolean {
+  if (!email) return false
+  return allowedAdminEmails().includes(email.toLowerCase())
+}
+
+/**
+ * Firebase only authenticates the admin. The role/profile lives in PostgreSQL
+ * and is loaded through the GiziLens API.
+ */
 export async function fetchUserProfile(user: User): Promise<UserProfile | null> {
-  try {
-    const snap = await getDoc(doc(db, 'users', user.uid))
-    if (!snap.exists()) return null
+  const allowlisted = isAllowlistedAdmin(user.email)
+  const byUid = await fetchUser(user.uid)
+  if (byUid) {
+    if (!isAdminRole({ role: byUid.role }) && !allowlisted) return null
+    return { ...mapApiUser(byUid), role: allowlisted ? 'BGN National Admin' : (byUid.role as UserRole) }
+  }
 
-    const data = snap.data()
-    if (!isAdminRole(data)) return null
-
-    const rawRole = typeof data.role === 'string' ? data.role.trim() : 'admin'
-    const normalizedRole: UserRole =
-      rawRole.toLowerCase() === 'admin' || rawRole.toLowerCase() === 'super_admin'
-        ? 'BGN National Admin'
-        : (rawRole as UserRole)
-
-    return {
-      uid: user.uid,
-      name:
-        typeof data.name === 'string' && data.name
-          ? data.name
-          : user.displayName || user.email?.split('@')[0] || 'Admin GiziLens',
-      email: typeof data.email === 'string' && data.email ? data.email : user.email || '',
-      role: normalizedRole,
-      institution:
-        typeof data.institution === 'string' && data.institution
-          ? data.institution
-          : 'Badan Gizi Nasional (BGN)',
-      status: (data.status as UserStatus) || 'Verified',
-      createdAtLabel: typeof data.createdAtLabel === 'string' ? data.createdAtLabel : 'Hari ini',
-      createdAtMs: typeof data.createdAtMs === 'number' ? data.createdAtMs : undefined,
+  if (user.email) {
+    const result = await fetchUsers({ search: user.email, pageSize: 5 })
+    const matched = result?.items.find(
+      (item) => item.email.toLowerCase() === user.email?.toLowerCase(),
+    )
+    if (matched) {
+      if (!isAdminRole({ role: matched.role }) && !allowlisted) return null
+      return { ...mapApiUser(matched), role: allowlisted ? 'BGN National Admin' : (matched.role as UserRole) }
     }
-  } catch {
-    return null
+  }
+
+  // API/DB belum tersedia: izinkan email admin yang dikonfigurasi (atau semua
+  // saat daftar kosong untuk mode demo lokal).
+  const email = (user.email ?? '').toLowerCase()
+  const allowlist = allowedAdminEmails()
+  if (allowlist.length > 0 && !allowlist.includes(email)) return null
+
+  return {
+    uid: user.uid,
+    name: user.displayName || user.email?.split('@')[0] || 'Admin GiziLens',
+    email: user.email || '',
+    role: 'BGN National Admin',
+    institution: 'Badan Gizi Nasional (BGN)',
+    status: 'Verified',
+    createdAtLabel: 'Hari ini',
   }
 }
 
@@ -73,7 +103,7 @@ export async function loginWithEmail(email: string, password: string): Promise<U
   const profile = await fetchUserProfile(credential.user)
   if (!profile) {
     await signOut(auth)
-    throw new Error('Akun ini tidak memiliki role admin di Firestore (koleksi users).')
+    throw new Error('Akun ini tidak memiliki role admin di database GiziLens.')
   }
   return profile
 }

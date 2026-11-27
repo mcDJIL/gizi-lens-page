@@ -49,6 +49,42 @@ export type ActivityPoint = {
   previous: number
 }
 
+export type ComplianceSegment = {
+  key: string
+  label: string
+  subtitle: string
+  percentage: number
+  bakiCount: number
+  colorHex: string
+}
+
+export const COMPLIANCE_FALLBACK: ComplianceSegment[] = [
+  {
+    key: 'meets_target',
+    label: 'Sesuai Target (AKG)',
+    subtitle: 'Kalori & makro terpenuhi',
+    percentage: 72,
+    bakiCount: 229284,
+    colorHex: '#10B981',
+  },
+  {
+    key: 'needs_review',
+    label: 'Perlu Tinjauan Ahli Gizi',
+    subtitle: 'Selisih porsi minor',
+    percentage: 18,
+    bakiCount: 57321,
+    colorHex: '#F59E0B',
+  },
+  {
+    key: 'below_std',
+    label: 'Di Bawah Standar',
+    subtitle: 'Perlu reformulasi menu',
+    percentage: 10,
+    bakiCount: 31845,
+    colorHex: '#EF4444',
+  },
+]
+
 export type RegionStat = {
   rank: number
   province: string
